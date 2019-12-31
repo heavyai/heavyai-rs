@@ -1,0 +1,10 @@
+[package]
+name = "omnisci"
+version = "0.1.0"
+authors = ["Jonathan Rajavuori <jrajav@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+thrift = "0.13.0"
+ordered-float = "1.0.2" # Required by thrift
+try_from = "0.3.2" # Required by thrift

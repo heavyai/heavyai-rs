@@ -1631,15 +1631,17 @@ pub struct TQueryResult {
   pub execution_time_ms: Option<i64>,
   pub total_time_ms: Option<i64>,
   pub nonce: Option<String>,
+  pub debug: Option<String>,
 }
 
 impl TQueryResult {
-  pub fn new<F1, F2, F3, F4>(row_set: F1, execution_time_ms: F2, total_time_ms: F3, nonce: F4) -> TQueryResult where F1: Into<Option<TRowSet>>, F2: Into<Option<i64>>, F3: Into<Option<i64>>, F4: Into<Option<String>> {
+  pub fn new<F1, F2, F3, F4, F5>(row_set: F1, execution_time_ms: F2, total_time_ms: F3, nonce: F4, debug: F5) -> TQueryResult where F1: Into<Option<TRowSet>>, F2: Into<Option<i64>>, F3: Into<Option<i64>>, F4: Into<Option<String>>, F5: Into<Option<String>> {
     TQueryResult {
       row_set: row_set.into(),
       execution_time_ms: execution_time_ms.into(),
       total_time_ms: total_time_ms.into(),
       nonce: nonce.into(),
+      debug: debug.into(),
     }
   }
   pub fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<TQueryResult> {
@@ -1648,6 +1650,7 @@ impl TQueryResult {
     let mut f_2: Option<i64> = Some(0);
     let mut f_3: Option<i64> = Some(0);
     let mut f_4: Option<String> = Some("".to_owned());
+    let mut f_5: Option<String> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -1671,6 +1674,10 @@ impl TQueryResult {
           let val = i_prot.read_string()?;
           f_4 = Some(val);
         },
+        5 => {
+          let val = i_prot.read_string()?;
+          f_5 = Some(val);
+        },
         _ => {
           i_prot.skip(field_ident.field_type)?;
         },
@@ -1683,6 +1690,7 @@ impl TQueryResult {
       execution_time_ms: f_2,
       total_time_ms: f_3,
       nonce: f_4,
+      debug: f_5,
     };
     Ok(ret)
   }
@@ -1721,6 +1729,14 @@ impl TQueryResult {
     } else {
       ()
     }
+    if let Some(ref fld_var) = self.debug {
+      o_prot.write_field_begin(&TFieldIdentifier::new("debug", TType::String, 5))?;
+      o_prot.write_string(fld_var)?;
+      o_prot.write_field_end()?;
+      ()
+    } else {
+      ()
+    }
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
   }
@@ -1733,6 +1749,7 @@ impl Default for TQueryResult {
       execution_time_ms: Some(0),
       total_time_ms: Some(0),
       nonce: Some("".to_owned()),
+      debug: Some("".to_owned()),
     }
   }
 }
@@ -5898,10 +5915,11 @@ pub struct TRawRenderPassDataResult {
   pub row_ids_b: Option<Vec<u8>>,
   pub table_ids: Option<Vec<u8>>,
   pub accum_data: Option<Vec<u8>>,
+  pub accum_depth: Option<i32>,
 }
 
 impl TRawRenderPassDataResult {
-  pub fn new<F1, F2, F3, F4, F5, F6, F7>(num_pixel_channels: F1, num_pixel_samples: F2, pixels: F3, row_ids_a: F4, row_ids_b: F5, table_ids: F6, accum_data: F7) -> TRawRenderPassDataResult where F1: Into<Option<i32>>, F2: Into<Option<i32>>, F3: Into<Option<Vec<u8>>>, F4: Into<Option<Vec<u8>>>, F5: Into<Option<Vec<u8>>>, F6: Into<Option<Vec<u8>>>, F7: Into<Option<Vec<u8>>> {
+  pub fn new<F1, F2, F3, F4, F5, F6, F7, F8>(num_pixel_channels: F1, num_pixel_samples: F2, pixels: F3, row_ids_a: F4, row_ids_b: F5, table_ids: F6, accum_data: F7, accum_depth: F8) -> TRawRenderPassDataResult where F1: Into<Option<i32>>, F2: Into<Option<i32>>, F3: Into<Option<Vec<u8>>>, F4: Into<Option<Vec<u8>>>, F5: Into<Option<Vec<u8>>>, F6: Into<Option<Vec<u8>>>, F7: Into<Option<Vec<u8>>>, F8: Into<Option<i32>> {
     TRawRenderPassDataResult {
       num_pixel_channels: num_pixel_channels.into(),
       num_pixel_samples: num_pixel_samples.into(),
@@ -5910,6 +5928,7 @@ impl TRawRenderPassDataResult {
       row_ids_b: row_ids_b.into(),
       table_ids: table_ids.into(),
       accum_data: accum_data.into(),
+      accum_depth: accum_depth.into(),
     }
   }
   pub fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<TRawRenderPassDataResult> {
@@ -5921,6 +5940,7 @@ impl TRawRenderPassDataResult {
     let mut f_5: Option<Vec<u8>> = Some(Vec::new());
     let mut f_6: Option<Vec<u8>> = Some(Vec::new());
     let mut f_7: Option<Vec<u8>> = Some(Vec::new());
+    let mut f_8: Option<i32> = Some(0);
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -5956,6 +5976,10 @@ impl TRawRenderPassDataResult {
           let val = i_prot.read_bytes()?;
           f_7 = Some(val);
         },
+        8 => {
+          let val = i_prot.read_i32()?;
+          f_8 = Some(val);
+        },
         _ => {
           i_prot.skip(field_ident.field_type)?;
         },
@@ -5971,6 +5995,7 @@ impl TRawRenderPassDataResult {
       row_ids_b: f_5,
       table_ids: f_6,
       accum_data: f_7,
+      accum_depth: f_8,
     };
     Ok(ret)
   }
@@ -6033,6 +6058,14 @@ impl TRawRenderPassDataResult {
     } else {
       ()
     }
+    if let Some(fld_var) = self.accum_depth {
+      o_prot.write_field_begin(&TFieldIdentifier::new("accum_depth", TType::I32, 8))?;
+      o_prot.write_i32(fld_var)?;
+      o_prot.write_field_end()?;
+      ()
+    } else {
+      ()
+    }
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
   }
@@ -6048,6 +6081,7 @@ impl Default for TRawRenderPassDataResult {
       row_ids_b: Some(Vec::new()),
       table_ids: Some(Vec::new()),
       accum_data: Some(Vec::new()),
+      accum_depth: Some(0),
     }
   }
 }
@@ -26199,3 +26233,4 @@ impl MapDRegisterRuntimeExtensionFunctionsResult {
     }
   }
 }
+

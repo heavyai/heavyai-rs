@@ -50,13 +50,19 @@ fix_clippy "src/serialized_result_set.rs"
 
 # Fix the use declarations in mapd.rs to have crate:: in front so that they can compile.
 # This is patching over open issue https://issues.apache.org/jira/browse/THRIFT-5071
-if ! perl -0777 -i -pe 's/use common;\nuse completion_hints;\nuse extension_functions;\nuse serialized_result_set;/use crate::common;\nuse crate::completion_hints;\nuse crate::extension_functions;\nuse crate::serialized_result_set;/gs' src/mapd.rs; then
+if ! perl -0777 -pi -e 's/use common;\nuse completion_hints;\nuse extension_functions;\nuse serialized_result_set;/use crate::common;\nuse crate::completion_hints;\nuse crate::extension_functions;\nuse crate::serialized_result_set;/gs' src/mapd.rs; then
   echo "Failed to fix use declarations in mapd.rs"
   exit 1
 fi
 
 # Fix the same in serialized_result_set.rs too
-if ! perl -0777 -i -pe 's/use common;/use crate::common;/g' src/serialized_result_set.rs; then
+if ! perl -0777 -pi -e 's/use common;/use crate::common;/g' src/serialized_result_set.rs; then
   echo "Failed to fix use declarations in serialized_result_set.rs"
+  exit 1
+fi
+
+# Chomp off the extra newline at the end of each file
+if ! perl -pi -e 'chomp if eof' src/common.rs src/completion_hints.rs src/extension_functions.rs src/mapd.rs src/serialized_result_set.rs; then
+  echo "Failed to chomp newlines"
   exit 1
 fi

@@ -425,4 +425,3 @@ impl Default for TUserDefinedTableFunction {
     }
   }
 }
-

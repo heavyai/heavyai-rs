@@ -360,4 +360,3 @@ impl Default for TTypeInfo {
     }
   }
 }
-

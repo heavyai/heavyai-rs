@@ -1,5 +1,5 @@
 extern crate ordered_float; // Required by thrift
-extern crate thrift;
+pub extern crate thrift;
 extern crate try_from; // Required by thrift
 
 pub mod thrift_generated;

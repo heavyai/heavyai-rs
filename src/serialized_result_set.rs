@@ -3,7 +3,7 @@
 
 #![allow(unused_imports)]
 #![allow(unused_extern_crates)]
-#![cfg_attr(feature = "cargo-clippy", allow(too_many_arguments, type_complexity))]
+#![cfg_attr(feature = "cargo-clippy", allow(clippy::too_many_arguments, clippy::type_complexity))]
 #![cfg_attr(rustfmt, rustfmt_skip)]
 
 extern crate thrift;
@@ -27,7 +27,7 @@ use thrift::protocol::verify_expected_service_call;
 use thrift::protocol::verify_required_field_exists;
 use thrift::server::TProcessor;
 
-use crate::thrift_generated::common;
+use crate::common;
 
 #[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum TResultSetLayout {

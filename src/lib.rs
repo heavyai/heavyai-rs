@@ -2,12 +2,14 @@ extern crate ordered_float; // Required by thrift
 pub extern crate thrift;
 extern crate try_from; // Required by thrift
 
-pub mod thrift_generated;
-pub use crate::thrift_generated::mapd::TMapDSyncClient;
-pub use crate::thrift_generated::mapd::*;
+pub mod common;
+pub mod completion_hints;
+pub mod extension_functions;
+pub mod mapd;
+pub mod serialized_result_set;
 
 pub mod client {
-  use crate::thrift_generated::mapd::MapDSyncClient;
+  use crate::mapd::MapDSyncClient;
 
   use thrift::protocol::{TBinaryInputProtocol, TBinaryOutputProtocol};
   use thrift::transport::{

@@ -49,14 +49,11 @@ fn main() -> omnisci::thrift::Result<()> {
 
   println!("connection successful");
 
-  let session = match client.connect(
+  let session = client.connect(
     "admin".to_string(),
     "HyperInteractive".to_string(),
     "omnisci".to_string(),
-  ) {
-    Ok(session) => session,
-    Err(e) => return Err(e),
-  };
+  )?;
 
   let query = "SELECT * FROM flights_donotmodify LIMIT 5;";
 

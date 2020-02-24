@@ -61,7 +61,12 @@ if ! perl -0777 -pi -e 's/use common;/use crate::common;/g' src/serialized_resul
   exit 1
 fi
 
-# Chomp off the extra newline at the end of each file
+# Add the commit hash from OmniSciDB for tracking
+if ! sed -i "1i\/\/ Generated from OmniSciDB commit $(cd ../omniscidb; git log -n 1 --pretty=format:"%H")" src/common.rs src/completion_hints.rs src/extension_functions.rs src/mapd.rs src/serialized_result_set.rs; then
+  echo "Failed to add commit hash comments"
+  exit 1
+fi
+
 if ! perl -pi -e 'chomp if eof' src/common.rs src/completion_hints.rs src/extension_functions.rs src/mapd.rs src/serialized_result_set.rs; then
   echo "Failed to chomp newlines"
   exit 1

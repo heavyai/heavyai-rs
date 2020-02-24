@@ -49,22 +49,19 @@ fn main() -> omnisci::thrift::Result<()> {
 
   println!("connection successful");
 
-  let session = client.connect(
-    "admin".to_string(),
-    "HyperInteractive".to_string(),
-    "omnisci".to_string(),
-  )?;
+  let user = "admin".to_string();
+  let passwd = "HyperInteractive".to_string();
+  let database = "omnisci".to_string();
 
-  let query = "SELECT * FROM flights_donotmodify LIMIT 5;";
+  let session = client.connect(user, passwd, database)?;
 
-  let results = client.sql_execute(
-    session,
-    query.to_string(),
-    false,
-    "1".to_string(),
-    10000,
-    -1,
-  );
+  let query = "SELECT * FROM flights_donotmodify LIMIT 5".to_string();
+  let columnar = false;
+  let nonce = "1".to_string();
+  let first_n = 10000;
+  let at_most_n = -1;
+
+  let results = client.sql_execute(session, query, columnar, nonce, first_n, at_most_n);
 
   if let Ok(results) = results {
     for row_set in results.row_set {

@@ -1,5 +1,3 @@
-extern crate omnisci;
-
 use omnisci::mapd::{TDatum, TMapDSyncClient, TRow, TRowSet};
 use omnisci::thrift;
 

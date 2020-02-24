@@ -4,6 +4,12 @@ version = "0.1.0"
 authors = ["Jonathan Rajavuori <jrajav@gmail.com>"]
 license = "MIT"
 edition = "2018"
+description = "A client for connecting to OmniSciDB using the Thrift API."
+keywords = ["omnisci", "mapd"]
+categories = ["api-bindings", "database"]
+documentation = "https://docs.rs/omnisci/"
+repository = "https://github.com/jrajav/omnisci-rs"
+readme = "README.md"
 
 [dependencies]
 thrift = "0.13.0"

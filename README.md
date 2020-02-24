@@ -1,6 +1,8 @@
 ![OmniSci](https://raw.githubusercontent.com/jrajav/omnisci-rs/e2cc0b230871e098ff98768def5eb1429ba43a7b/omnisci.png)
 
-# omnisci-rs
+-----
+
+[![Latest Version](https://img.shields.io/crates/v/omnisci.svg)](https://crates.io/crates/omnisci)
 
 A Rust client for connecting to [OmniSciDB](https://github.com/omnisci/omniscidb) via its RPC protocol of [Thrift](https://thrift.apache.org/). This package takes care of creating a client with the Thrift binary protocol and buffered transport, and exposes all of the OmniSci Thrift types and methods for use with it.
 

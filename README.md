@@ -6,8 +6,8 @@ A Rust client for connecting to [OmniSciDB](https://github.com/omnisci/omniscidb
 
 This client has been tested on these versions, and is expected to work with more recent versions unless otherwise noted:
 
-Rust 1.41+
-OmniSciDB 5.1.0+
+* Rust 1.41+
+* OmniSciDB 5.1+
 
 It is also likely to work on earlier versions of OmniSciDB, but this is not officially supported.
 
@@ -42,7 +42,7 @@ let at_most_n = -1;
 let results = client.sql_execute(session, query, columnar, nonce, first_n, at_most_n);
 ```
 
-See the examples folder for more a more complete example.
+See the examples folder for a more complete example.
 
 ## Contributing
 
@@ -54,7 +54,7 @@ This project is built with [Cargo](https://github.com/rust-lang/cargo), using `c
 ./generate_thrift_bindings.sh ../omniscidb
 ```
 
-All source is also formatted with rustfmt, via `cargo fmt`.
+All source is also formatted with [rustfmt](https://github.com/rust-lang/rustfmt), via `cargo fmt`.
 
 ### Testing
 

@@ -1,0 +1,8 @@
+[package]
+name = "omnisci_example_query_print"
+version = "0.1.0"
+authors = ["Jonathan Rajavuori <jrajav@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+omnisci = { path = "../.." }

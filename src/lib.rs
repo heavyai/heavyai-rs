@@ -5,11 +5,11 @@ extern crate try_from; // Required by thrift
 pub mod common;
 pub mod completion_hints;
 pub mod extension_functions;
-pub mod mapd;
+pub mod omnisci;
 pub mod serialized_result_set;
 
 pub mod client {
-  use crate::mapd::MapDSyncClient;
+  use crate::omnisci::OmniSciSyncClient;
 
   use thrift::protocol::{TBinaryInputProtocol, TBinaryOutputProtocol};
   use thrift::transport::{
@@ -19,7 +19,7 @@ pub mod client {
   pub fn create(
     remote_address: &str,
   ) -> Result<
-    MapDSyncClient<
+    OmniSciSyncClient<
       TBinaryInputProtocol<TBufferedReadTransport<ReadHalf<TTcpChannel>>>,
       TBinaryOutputProtocol<TBufferedWriteTransport<WriteHalf<TTcpChannel>>>,
     >,
@@ -33,6 +33,6 @@ pub mod client {
     let i_prot = TBinaryInputProtocol::new(TBufferedReadTransport::new(i_chan), true);
     let o_prot = TBinaryOutputProtocol::new(TBufferedWriteTransport::new(o_chan), true);
 
-    Ok(MapDSyncClient::new(i_prot, o_prot))
+    Ok(OmniSciSyncClient::new(i_prot, o_prot))
   }
 }

@@ -5,7 +5,7 @@ const OMNISCI_PASSWD: &str = "HyperInteractive";
 const OMNISCI_DBNAME: &str = "omnisci";
 
 use chrono;
-use omnisci::mapd::TMapDSyncClient;
+use omnisci::omnisci::TOmniSciSyncClient;
 
 #[test]
 fn test_version() -> Result<(), thrift::Error> {

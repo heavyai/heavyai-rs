@@ -15,6 +15,7 @@ readme = "README.md"
 thrift = "0.13.0"
 ordered-float = "1.0.2" # Required by thrift
 try_from = "0.3.2" # Required by thrift
+regex = "1"
 
 [dev-dependencies]
-chrono = "0.4.10"
+chrono = "0.4.11"

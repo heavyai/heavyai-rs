@@ -287,6 +287,46 @@ impl TryFrom<i32> for TMergeType {
 }
 
 #[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum TQueryType {
+  Unknown = 0,
+  Read = 1,
+  Write = 2,
+  SchemaRead = 3,
+  SchemaWrite = 4,
+}
+
+impl TQueryType {
+  pub fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    o_prot.write_i32(*self as i32)
+  }
+  pub fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<TQueryType> {
+    let enum_value = i_prot.read_i32()?;
+    TQueryType::try_from(enum_value)  }
+}
+
+impl TryFrom<i32> for TQueryType {
+  type Error = thrift::Error;  fn try_from(i: i32) -> Result<Self, Self::Error> {
+    match i {
+      0 => Ok(TQueryType::Unknown),
+      1 => Ok(TQueryType::Read),
+      2 => Ok(TQueryType::Write),
+      3 => Ok(TQueryType::SchemaRead),
+      4 => Ok(TQueryType::SchemaWrite),
+      _ => {
+        Err(
+          thrift::Error::Protocol(
+            ProtocolError::new(
+              ProtocolErrorKind::InvalidData,
+              format!("cannot convert enum constant {} to TQueryType", i)
+            )
+          )
+        )
+      },
+    }
+  }
+}
+
+#[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum TExpressionRangeType {
   Invalid = 0,
   Integer = 1,
@@ -365,8 +405,6 @@ impl TryFrom<i32> for TDBObjectType {
 }
 
 pub type TRowDescriptor = Vec<TColumnType>;
-
-pub type TTableDescriptor = BTreeMap<String, TColumnType>;
 
 pub type TSessionId = String;
 
@@ -1633,10 +1671,11 @@ pub struct TQueryResult {
   pub nonce: Option<String>,
   pub debug: Option<String>,
   pub success: Option<bool>,
+  pub query_type: Option<TQueryType>,
 }
 
 impl TQueryResult {
-  pub fn new<F1, F2, F3, F4, F5, F6>(row_set: F1, execution_time_ms: F2, total_time_ms: F3, nonce: F4, debug: F5, success: F6) -> TQueryResult where F1: Into<Option<TRowSet>>, F2: Into<Option<i64>>, F3: Into<Option<i64>>, F4: Into<Option<String>>, F5: Into<Option<String>>, F6: Into<Option<bool>> {
+  pub fn new<F1, F2, F3, F4, F5, F6, F7>(row_set: F1, execution_time_ms: F2, total_time_ms: F3, nonce: F4, debug: F5, success: F6, query_type: F7) -> TQueryResult where F1: Into<Option<TRowSet>>, F2: Into<Option<i64>>, F3: Into<Option<i64>>, F4: Into<Option<String>>, F5: Into<Option<String>>, F6: Into<Option<bool>>, F7: Into<Option<TQueryType>> {
     TQueryResult {
       row_set: row_set.into(),
       execution_time_ms: execution_time_ms.into(),
@@ -1644,6 +1683,7 @@ impl TQueryResult {
       nonce: nonce.into(),
       debug: debug.into(),
       success: success.into(),
+      query_type: query_type.into(),
     }
   }
   pub fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<TQueryResult> {
@@ -1652,8 +1692,9 @@ impl TQueryResult {
     let mut f_2: Option<i64> = Some(0);
     let mut f_3: Option<i64> = Some(0);
     let mut f_4: Option<String> = Some("".to_owned());
-    let mut f_5: Option<String> = None;
-    let mut f_6: Option<bool> = None;
+    let mut f_5: Option<String> = Some("".to_owned());
+    let mut f_6: Option<bool> = Some(false);
+    let mut f_7: Option<TQueryType> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -1685,6 +1726,10 @@ impl TQueryResult {
           let val = i_prot.read_bool()?;
           f_6 = Some(val);
         },
+        7 => {
+          let val = TQueryType::read_from_in_protocol(i_prot)?;
+          f_7 = Some(val);
+        },
         _ => {
           i_prot.skip(field_ident.field_type)?;
         },
@@ -1699,6 +1744,7 @@ impl TQueryResult {
       nonce: f_4,
       debug: f_5,
       success: f_6,
+      query_type: f_7,
     };
     Ok(ret)
   }
@@ -1753,6 +1799,14 @@ impl TQueryResult {
     } else {
       ()
     }
+    if let Some(ref fld_var) = self.query_type {
+      o_prot.write_field_begin(&TFieldIdentifier::new("query_type", TType::I32, 7))?;
+      fld_var.write_to_out_protocol(o_prot)?;
+      o_prot.write_field_end()?;
+      ()
+    } else {
+      ()
+    }
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
   }
@@ -1767,6 +1821,7 @@ impl Default for TQueryResult {
       nonce: Some("".to_owned()),
       debug: Some("".to_owned()),
       success: Some(false),
+      query_type: None,
     }
   }
 }
@@ -7752,7 +7807,7 @@ pub trait TOmniSciSyncClient {
   fn sql_execute_gdf(&mut self, session: TSessionId, query: String, device_id: i32, first_n: i32) -> thrift::Result<TDataFrame>;
   fn deallocate_df(&mut self, session: TSessionId, df: TDataFrame, device_type: common::TDeviceType, device_id: i32) -> thrift::Result<()>;
   fn interrupt(&mut self, query_session: TSessionId, interrupt_session: TSessionId) -> thrift::Result<()>;
-  fn sql_validate(&mut self, session: TSessionId, query: String) -> thrift::Result<TTableDescriptor>;
+  fn sql_validate(&mut self, session: TSessionId, query: String) -> thrift::Result<TRowDescriptor>;
   fn get_completion_hints(&mut self, session: TSessionId, sql: String, cursor: i32) -> thrift::Result<Vec<completion_hints::TCompletionHint>>;
   fn set_execution_mode(&mut self, session: TSessionId, mode: TExecuteMode) -> thrift::Result<()>;
   fn render_vega(&mut self, session: TSessionId, widget_id: i64, vega_json: String, compression_level: i32, nonce: String) -> thrift::Result<TRenderResult>;
@@ -7779,8 +7834,9 @@ pub trait TOmniSciSyncClient {
   fn get_first_geo_file_in_archive(&mut self, session: TSessionId, archive_path: String, copy_params: TCopyParams) -> thrift::Result<String>;
   fn get_all_files_in_archive(&mut self, session: TSessionId, archive_path: String, copy_params: TCopyParams) -> thrift::Result<Vec<String>>;
   fn get_layers_in_geo_file(&mut self, session: TSessionId, file_name: String, copy_params: TCopyParams) -> thrift::Result<Vec<TGeoFileLayerInfo>>;
+  fn query_get_outer_fragment_count(&mut self, session: TSessionId, query: String) -> thrift::Result<i64>;
   fn check_table_consistency(&mut self, session: TSessionId, table_id: i32) -> thrift::Result<TTableMeta>;
-  fn start_query(&mut self, leaf_session: TSessionId, parent_session: TSessionId, query_ra: String, just_explain: bool) -> thrift::Result<TPendingQuery>;
+  fn start_query(&mut self, leaf_session: TSessionId, parent_session: TSessionId, query_ra: String, just_explain: bool, outer_fragment_indices: Vec<i64>) -> thrift::Result<TPendingQuery>;
   fn execute_query_step(&mut self, pending_query: TPendingQuery) -> thrift::Result<TStepResult>;
   fn broadcast_serialized_rows(&mut self, serialized_rows: serialized_result_set::TSerializedRows, row_desc: TRowDescriptor, query_id: TQueryId) -> thrift::Result<()>;
   fn start_render_query(&mut self, session: TSessionId, widget_id: i64, node_idx: i16, vega_json: String) -> thrift::Result<TPendingRenderQuery>;
@@ -8714,7 +8770,7 @@ impl <C: TThriftClient + TOmniSciSyncClientMarker> TOmniSciSyncClient for C {
       result.ok_or()
     }
   }
-  fn sql_validate(&mut self, session: TSessionId, query: String) -> thrift::Result<TTableDescriptor> {
+  fn sql_validate(&mut self, session: TSessionId, query: String) -> thrift::Result<TRowDescriptor> {
     (
       {
         self.increment_sequence_number();
@@ -9443,6 +9499,33 @@ impl <C: TThriftClient + TOmniSciSyncClientMarker> TOmniSciSyncClient for C {
       result.ok_or()
     }
   }
+  fn query_get_outer_fragment_count(&mut self, session: TSessionId, query: String) -> thrift::Result<i64> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("query_get_outer_fragment_count", TMessageType::Call, self.sequence_number());
+        let call_args = OmniSciQueryGetOuterFragmentCountArgs { session: session, query: query };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("query_get_outer_fragment_count", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = OmniSciQueryGetOuterFragmentCountResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
   fn check_table_consistency(&mut self, session: TSessionId, table_id: i32) -> thrift::Result<TTableMeta> {
     (
       {
@@ -9470,12 +9553,12 @@ impl <C: TThriftClient + TOmniSciSyncClientMarker> TOmniSciSyncClient for C {
       result.ok_or()
     }
   }
-  fn start_query(&mut self, leaf_session: TSessionId, parent_session: TSessionId, query_ra: String, just_explain: bool) -> thrift::Result<TPendingQuery> {
+  fn start_query(&mut self, leaf_session: TSessionId, parent_session: TSessionId, query_ra: String, just_explain: bool, outer_fragment_indices: Vec<i64>) -> thrift::Result<TPendingQuery> {
     (
       {
         self.increment_sequence_number();
         let message_ident = TMessageIdentifier::new("start_query", TMessageType::Call, self.sequence_number());
-        let call_args = OmniSciStartQueryArgs { leaf_session: leaf_session, parent_session: parent_session, query_ra: query_ra, just_explain: just_explain };
+        let call_args = OmniSciStartQueryArgs { leaf_session: leaf_session, parent_session: parent_session, query_ra: query_ra, just_explain: just_explain, outer_fragment_indices: outer_fragment_indices };
         self.o_prot_mut().write_message_begin(&message_ident)?;
         call_args.write_to_out_protocol(self.o_prot_mut())?;
         self.o_prot_mut().write_message_end()?;
@@ -9969,7 +10052,7 @@ pub trait OmniSciSyncHandler {
   fn handle_sql_execute_gdf(&self, session: TSessionId, query: String, device_id: i32, first_n: i32) -> thrift::Result<TDataFrame>;
   fn handle_deallocate_df(&self, session: TSessionId, df: TDataFrame, device_type: common::TDeviceType, device_id: i32) -> thrift::Result<()>;
   fn handle_interrupt(&self, query_session: TSessionId, interrupt_session: TSessionId) -> thrift::Result<()>;
-  fn handle_sql_validate(&self, session: TSessionId, query: String) -> thrift::Result<TTableDescriptor>;
+  fn handle_sql_validate(&self, session: TSessionId, query: String) -> thrift::Result<TRowDescriptor>;
   fn handle_get_completion_hints(&self, session: TSessionId, sql: String, cursor: i32) -> thrift::Result<Vec<completion_hints::TCompletionHint>>;
   fn handle_set_execution_mode(&self, session: TSessionId, mode: TExecuteMode) -> thrift::Result<()>;
   fn handle_render_vega(&self, session: TSessionId, widget_id: i64, vega_json: String, compression_level: i32, nonce: String) -> thrift::Result<TRenderResult>;
@@ -9996,8 +10079,9 @@ pub trait OmniSciSyncHandler {
   fn handle_get_first_geo_file_in_archive(&self, session: TSessionId, archive_path: String, copy_params: TCopyParams) -> thrift::Result<String>;
   fn handle_get_all_files_in_archive(&self, session: TSessionId, archive_path: String, copy_params: TCopyParams) -> thrift::Result<Vec<String>>;
   fn handle_get_layers_in_geo_file(&self, session: TSessionId, file_name: String, copy_params: TCopyParams) -> thrift::Result<Vec<TGeoFileLayerInfo>>;
+  fn handle_query_get_outer_fragment_count(&self, session: TSessionId, query: String) -> thrift::Result<i64>;
   fn handle_check_table_consistency(&self, session: TSessionId, table_id: i32) -> thrift::Result<TTableMeta>;
-  fn handle_start_query(&self, leaf_session: TSessionId, parent_session: TSessionId, query_ra: String, just_explain: bool) -> thrift::Result<TPendingQuery>;
+  fn handle_start_query(&self, leaf_session: TSessionId, parent_session: TSessionId, query_ra: String, just_explain: bool, outer_fragment_indices: Vec<i64>) -> thrift::Result<TPendingQuery>;
   fn handle_execute_query_step(&self, pending_query: TPendingQuery) -> thrift::Result<TStepResult>;
   fn handle_broadcast_serialized_rows(&self, serialized_rows: serialized_result_set::TSerializedRows, row_desc: TRowDescriptor, query_id: TQueryId) -> thrift::Result<()>;
   fn handle_start_render_query(&self, session: TSessionId, widget_id: i64, node_idx: i16, vega_json: String) -> thrift::Result<TPendingRenderQuery>;
@@ -10205,6 +10289,9 @@ impl <H: OmniSciSyncHandler> OmniSciSyncProcessor<H> {
   }
   fn process_get_layers_in_geo_file(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TOmniSciProcessFunctions::process_get_layers_in_geo_file(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_query_get_outer_fragment_count(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TOmniSciProcessFunctions::process_query_get_outer_fragment_count(&self.handler, incoming_sequence_number, i_prot, o_prot)
   }
   fn process_check_table_consistency(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TOmniSciProcessFunctions::process_check_table_consistency(&self.handler, incoming_sequence_number, i_prot, o_prot)
@@ -13819,6 +13906,66 @@ impl TOmniSciProcessFunctions {
       },
     }
   }
+  pub fn process_query_get_outer_fragment_count<H: OmniSciSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = OmniSciQueryGetOuterFragmentCountArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_query_get_outer_fragment_count(args.session, args.query) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("query_get_outer_fragment_count", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = OmniSciQueryGetOuterFragmentCountResult { result_value: Some(handler_return), e: None };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::User(usr_err) => {
+            if usr_err.downcast_ref::<TOmniSciException>().is_some() {
+              let err = usr_err.downcast::<TOmniSciException>().expect("downcast already checked");
+              let ret_err = OmniSciQueryGetOuterFragmentCountResult{ result_value: None, e: Some(*err) };
+              let message_ident = TMessageIdentifier::new("query_get_outer_fragment_count", TMessageType::Reply, incoming_sequence_number);
+              o_prot.write_message_begin(&message_ident)?;
+              ret_err.write_to_out_protocol(o_prot)?;
+              o_prot.write_message_end()?;
+              o_prot.flush()
+            } else {
+              let ret_err = {
+                ApplicationError::new(
+                  ApplicationErrorKind::Unknown,
+                  usr_err.description()
+                )
+              };
+              let message_ident = TMessageIdentifier::new("query_get_outer_fragment_count", TMessageType::Exception, incoming_sequence_number);
+              o_prot.write_message_begin(&message_ident)?;
+              thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+              o_prot.write_message_end()?;
+              o_prot.flush()
+            }
+          },
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("query_get_outer_fragment_count", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.description()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("query_get_outer_fragment_count", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
   pub fn process_check_table_consistency<H: OmniSciSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let args = OmniSciCheckTableConsistencyArgs::read_from_in_protocol(i_prot)?;
     match handler.handle_check_table_consistency(args.session, args.table_id) {
@@ -13881,7 +14028,7 @@ impl TOmniSciProcessFunctions {
   }
   pub fn process_start_query<H: OmniSciSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let args = OmniSciStartQueryArgs::read_from_in_protocol(i_prot)?;
-    match handler.handle_start_query(args.leaf_session, args.parent_session, args.query_ra, args.just_explain) {
+    match handler.handle_start_query(args.leaf_session, args.parent_session, args.query_ra, args.just_explain, args.outer_fragment_indices) {
       Ok(handler_return) => {
         let message_ident = TMessageIdentifier::new("start_query", TMessageType::Reply, incoming_sequence_number);
         o_prot.write_message_begin(&message_ident)?;
@@ -15084,6 +15231,9 @@ impl <H: OmniSciSyncHandler> TProcessor for OmniSciSyncProcessor<H> {
       },
       "get_layers_in_geo_file" => {
         self.process_get_layers_in_geo_file(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "query_get_outer_fragment_count" => {
+        self.process_query_get_outer_fragment_count(message_ident.sequence_number, i_prot, o_prot)
       },
       "check_table_consistency" => {
         self.process_check_table_consistency(message_ident.sequence_number, i_prot, o_prot)
@@ -19677,14 +19827,14 @@ impl OmniSciSqlValidateArgs {
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 struct OmniSciSqlValidateResult {
-  result_value: Option<TTableDescriptor>,
+  result_value: Option<TRowDescriptor>,
   e: Option<TOmniSciException>,
 }
 
 impl OmniSciSqlValidateResult {
   fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<OmniSciSqlValidateResult> {
     i_prot.read_struct_begin()?;
-    let mut f_0: Option<TTableDescriptor> = None;
+    let mut f_0: Option<TRowDescriptor> = None;
     let mut f_1: Option<TOmniSciException> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
@@ -19694,14 +19844,13 @@ impl OmniSciSqlValidateResult {
       let field_id = field_id(&field_ident)?;
       match field_id {
         0 => {
-          let map_ident = i_prot.read_map_begin()?;
-          let mut val: BTreeMap<String, TColumnType> = BTreeMap::new();
-          for _ in 0..map_ident.size {
-            let map_key_48 = i_prot.read_string()?;
-            let map_val_49 = TColumnType::read_from_in_protocol(i_prot)?;
-            val.insert(map_key_48, map_val_49);
+          let list_ident = i_prot.read_list_begin()?;
+          let mut val: Vec<TColumnType> = Vec::with_capacity(list_ident.size as usize);
+          for _ in 0..list_ident.size {
+            let list_elem_48 = TColumnType::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_48);
           }
-          i_prot.read_map_end()?;
+          i_prot.read_list_end()?;
           f_0 = Some(val);
         },
         1 => {
@@ -19725,12 +19874,11 @@ impl OmniSciSqlValidateResult {
     let struct_ident = TStructIdentifier::new("OmniSciSqlValidateResult");
     o_prot.write_struct_begin(&struct_ident)?;
     if let Some(ref fld_var) = self.result_value {
-      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::Map, 0))?;
-      o_prot.write_map_begin(&TMapIdentifier::new(TType::String, TType::Struct, fld_var.len() as i32))?;
-      for (k, v) in fld_var {
-        o_prot.write_string(k)?;
-        v.write_to_out_protocol(o_prot)?;
-        o_prot.write_map_end()?;
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::List, 0))?;
+      o_prot.write_list_begin(&TListIdentifier::new(TType::Struct, fld_var.len() as i32))?;
+      for e in fld_var {
+        e.write_to_out_protocol(o_prot)?;
+        o_prot.write_list_end()?;
       }
       o_prot.write_field_end()?;
       ()
@@ -19748,7 +19896,7 @@ impl OmniSciSqlValidateResult {
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
   }
-  fn ok_or(self) -> thrift::Result<TTableDescriptor> {
+  fn ok_or(self) -> thrift::Result<TRowDescriptor> {
     if self.e.is_some() {
       Err(thrift::Error::User(Box::new(self.e.unwrap())))
     } else if self.result_value.is_some() {
@@ -19862,8 +20010,8 @@ impl OmniSciGetCompletionHintsResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<completion_hints::TCompletionHint> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_50 = completion_hints::TCompletionHint::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_50);
+            let list_elem_49 = completion_hints::TCompletionHint::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_49);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -20270,15 +20418,15 @@ impl OmniSciGetResultRowForPixelArgs {
           let map_ident = i_prot.read_map_begin()?;
           let mut val: BTreeMap<String, Vec<String>> = BTreeMap::new();
           for _ in 0..map_ident.size {
-            let map_key_51 = i_prot.read_string()?;
+            let map_key_50 = i_prot.read_string()?;
             let list_ident = i_prot.read_list_begin()?;
-            let mut map_val_52: Vec<String> = Vec::with_capacity(list_ident.size as usize);
+            let mut map_val_51: Vec<String> = Vec::with_capacity(list_ident.size as usize);
             for _ in 0..list_ident.size {
-              let list_elem_53 = i_prot.read_string()?;
-              map_val_52.push(list_elem_53);
+              let list_elem_52 = i_prot.read_string()?;
+              map_val_51.push(list_elem_52);
             }
             i_prot.read_list_end()?;
-            val.insert(map_key_51, map_val_52);
+            val.insert(map_key_50, map_val_51);
           }
           i_prot.read_map_end()?;
           f_4 = Some(val);
@@ -20657,8 +20805,8 @@ impl OmniSciGetDashboardsResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TDashboard> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_54 = TDashboard::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_54);
+            let list_elem_53 = TDashboard::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_53);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -21232,8 +21380,8 @@ impl OmniSciShareDashboardArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_55 = i_prot.read_string()?;
-            val.push(list_elem_55);
+            let list_elem_54 = i_prot.read_string()?;
+            val.push(list_elem_54);
           }
           i_prot.read_list_end()?;
           f_3 = Some(val);
@@ -21242,8 +21390,8 @@ impl OmniSciShareDashboardArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_56 = i_prot.read_string()?;
-            val.push(list_elem_56);
+            let list_elem_55 = i_prot.read_string()?;
+            val.push(list_elem_55);
           }
           i_prot.read_list_end()?;
           f_4 = Some(val);
@@ -21412,8 +21560,8 @@ impl OmniSciUnshareDashboardArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_57 = i_prot.read_string()?;
-            val.push(list_elem_57);
+            let list_elem_56 = i_prot.read_string()?;
+            val.push(list_elem_56);
           }
           i_prot.read_list_end()?;
           f_3 = Some(val);
@@ -21422,8 +21570,8 @@ impl OmniSciUnshareDashboardArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_58 = i_prot.read_string()?;
-            val.push(list_elem_58);
+            let list_elem_57 = i_prot.read_string()?;
+            val.push(list_elem_57);
           }
           i_prot.read_list_end()?;
           f_4 = Some(val);
@@ -21628,8 +21776,8 @@ impl OmniSciGetDashboardGranteesResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TDashboardGrantees> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_59 = TDashboardGrantees::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_59);
+            let list_elem_58 = TDashboardGrantees::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_58);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -22026,8 +22174,8 @@ impl OmniSciLoadTableBinaryArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TRow> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_60 = TRow::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_60);
+            let list_elem_59 = TRow::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_59);
           }
           i_prot.read_list_end()?;
           f_3 = Some(val);
@@ -22165,8 +22313,8 @@ impl OmniSciLoadTableBinaryColumnarArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TColumn> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_61 = TColumn::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_61);
+            let list_elem_60 = TColumn::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_60);
           }
           i_prot.read_list_end()?;
           f_3 = Some(val);
@@ -22433,8 +22581,8 @@ impl OmniSciLoadTableArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TStringRow> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_62 = TStringRow::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_62);
+            let list_elem_61 = TStringRow::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_61);
           }
           i_prot.read_list_end()?;
           f_3 = Some(val);
@@ -22729,8 +22877,8 @@ impl OmniSciCreateTableArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TColumnType> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_63 = TColumnType::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_63);
+            let list_elem_62 = TColumnType::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_62);
           }
           i_prot.read_list_end()?;
           f_3 = Some(val);
@@ -23040,8 +23188,8 @@ impl OmniSciImportGeoTableArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TColumnType> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_64 = TColumnType::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_64);
+            let list_elem_63 = TColumnType::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_63);
           }
           i_prot.read_list_end()?;
           f_5 = Some(val);
@@ -23553,8 +23701,8 @@ impl OmniSciGetAllFilesInArchiveResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_65 = i_prot.read_string()?;
-            val.push(list_elem_65);
+            let list_elem_64 = i_prot.read_string()?;
+            val.push(list_elem_64);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -23716,8 +23864,8 @@ impl OmniSciGetLayersInGeoFileResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TGeoFileLayerInfo> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_66 = TGeoFileLayerInfo::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_66);
+            let list_elem_65 = TGeoFileLayerInfo::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_65);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -23776,6 +23924,148 @@ impl OmniSciGetLayersInGeoFileResult {
           ApplicationError::new(
             ApplicationErrorKind::MissingResult,
             "no result received for OmniSciGetLayersInGeoFile"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// OmniSciQueryGetOuterFragmentCountArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct OmniSciQueryGetOuterFragmentCountArgs {
+  session: TSessionId,
+  query: String,
+}
+
+impl OmniSciQueryGetOuterFragmentCountArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<OmniSciQueryGetOuterFragmentCountArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<TSessionId> = None;
+    let mut f_2: Option<String> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_string()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_string()?;
+          f_2 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("OmniSciQueryGetOuterFragmentCountArgs.session", &f_1)?;
+    verify_required_field_exists("OmniSciQueryGetOuterFragmentCountArgs.query", &f_2)?;
+    let ret = OmniSciQueryGetOuterFragmentCountArgs {
+      session: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      query: f_2.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("query_get_outer_fragment_count_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("session", TType::String, 1))?;
+    o_prot.write_string(&self.session)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("query", TType::String, 2))?;
+    o_prot.write_string(&self.query)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// OmniSciQueryGetOuterFragmentCountResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct OmniSciQueryGetOuterFragmentCountResult {
+  result_value: Option<i64>,
+  e: Option<TOmniSciException>,
+}
+
+impl OmniSciQueryGetOuterFragmentCountResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<OmniSciQueryGetOuterFragmentCountResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<i64> = None;
+    let mut f_1: Option<TOmniSciException> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_i64()?;
+          f_0 = Some(val);
+        },
+        1 => {
+          let val = TOmniSciException::read_from_in_protocol(i_prot)?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = OmniSciQueryGetOuterFragmentCountResult {
+      result_value: f_0,
+      e: f_1,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("OmniSciQueryGetOuterFragmentCountResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::I64, 0))?;
+      o_prot.write_i64(fld_var)?;
+      o_prot.write_field_end()?;
+      ()
+    } else {
+      ()
+    }
+    if let Some(ref fld_var) = self.e {
+      o_prot.write_field_begin(&TFieldIdentifier::new("e", TType::Struct, 1))?;
+      fld_var.write_to_out_protocol(o_prot)?;
+      o_prot.write_field_end()?;
+      ()
+    } else {
+      ()
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<i64> {
+    if self.e.is_some() {
+      Err(thrift::Error::User(Box::new(self.e.unwrap())))
+    } else if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for OmniSciQueryGetOuterFragmentCount"
           )
         )
       )
@@ -23935,6 +24225,7 @@ struct OmniSciStartQueryArgs {
   parent_session: TSessionId,
   query_ra: String,
   just_explain: bool,
+  outer_fragment_indices: Vec<i64>,
 }
 
 impl OmniSciStartQueryArgs {
@@ -23944,6 +24235,7 @@ impl OmniSciStartQueryArgs {
     let mut f_2: Option<TSessionId> = None;
     let mut f_3: Option<String> = None;
     let mut f_4: Option<bool> = None;
+    let mut f_5: Option<Vec<i64>> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -23967,6 +24259,16 @@ impl OmniSciStartQueryArgs {
           let val = i_prot.read_bool()?;
           f_4 = Some(val);
         },
+        5 => {
+          let list_ident = i_prot.read_list_begin()?;
+          let mut val: Vec<i64> = Vec::with_capacity(list_ident.size as usize);
+          for _ in 0..list_ident.size {
+            let list_elem_66 = i_prot.read_i64()?;
+            val.push(list_elem_66);
+          }
+          i_prot.read_list_end()?;
+          f_5 = Some(val);
+        },
         _ => {
           i_prot.skip(field_ident.field_type)?;
         },
@@ -23978,11 +24280,13 @@ impl OmniSciStartQueryArgs {
     verify_required_field_exists("OmniSciStartQueryArgs.parent_session", &f_2)?;
     verify_required_field_exists("OmniSciStartQueryArgs.query_ra", &f_3)?;
     verify_required_field_exists("OmniSciStartQueryArgs.just_explain", &f_4)?;
+    verify_required_field_exists("OmniSciStartQueryArgs.outer_fragment_indices", &f_5)?;
     let ret = OmniSciStartQueryArgs {
       leaf_session: f_1.expect("auto-generated code should have checked for presence of required fields"),
       parent_session: f_2.expect("auto-generated code should have checked for presence of required fields"),
       query_ra: f_3.expect("auto-generated code should have checked for presence of required fields"),
       just_explain: f_4.expect("auto-generated code should have checked for presence of required fields"),
+      outer_fragment_indices: f_5.expect("auto-generated code should have checked for presence of required fields"),
     };
     Ok(ret)
   }
@@ -24000,6 +24304,13 @@ impl OmniSciStartQueryArgs {
     o_prot.write_field_end()?;
     o_prot.write_field_begin(&TFieldIdentifier::new("just_explain", TType::Bool, 4))?;
     o_prot.write_bool(self.just_explain)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("outer_fragment_indices", TType::List, 5))?;
+    o_prot.write_list_begin(&TListIdentifier::new(TType::I64, self.outer_fragment_indices.len() as i32))?;
+    for e in &self.outer_fragment_indices {
+      o_prot.write_i64(*e)?;
+      o_prot.write_list_end()?;
+    }
     o_prot.write_field_end()?;
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()

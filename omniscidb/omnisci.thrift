@@ -92,7 +92,6 @@ struct TStringRow {
 }
 
 typedef list<TColumnType> TRowDescriptor
-typedef map<string, TColumnType> TTableDescriptor
 typedef string TSessionId
 typedef string TKrb5Token
 typedef i64 TQueryId
@@ -123,13 +122,22 @@ struct TRowSet {
   4: bool is_columnar
 }
 
+enum TQueryType {
+  UNKNOWN,
+  READ,
+  WRITE,
+  SCHEMA_READ,
+  SCHEMA_WRITE
+}
+
 struct TQueryResult {
   1: TRowSet row_set
   2: i64 execution_time_ms
   3: i64 total_time_ms
   4: string nonce
-  5: optional string debug
-  6: optional bool success=true
+  5: string debug
+  6: bool success=true
+  7: TQueryType query_type=TQueryType.UNKNOWN
 }
 
 struct TDataFrame {
@@ -528,7 +536,7 @@ service OmniSci {
   TDataFrame sql_execute_gdf(1: TSessionId session, 2: string query 3: i32 device_id = 0, 4: i32 first_n = -1) throws (1: TOmniSciException e)
   void deallocate_df(1: TSessionId session, 2: TDataFrame df, 3: common.TDeviceType device_type, 4: i32 device_id = 0) throws (1: TOmniSciException e)
   void interrupt(1: TSessionId query_session, 2: TSessionId interrupt_session) throws (1: TOmniSciException e)
-  TTableDescriptor sql_validate(1: TSessionId session, 2: string query) throws (1: TOmniSciException e)
+  TRowDescriptor sql_validate(1: TSessionId session, 2: string query) throws (1: TOmniSciException e)
   list<completion_hints.TCompletionHint> get_completion_hints(1: TSessionId session, 2:string sql, 3:i32 cursor) throws (1: TOmniSciException e)
   void set_execution_mode(1: TSessionId session, 2: TExecuteMode mode) throws (1: TOmniSciException e)
   TRenderResult render_vega(1: TSessionId session, 2: i64 widget_id, 3: string vega_json, 4: i32 compression_level, 5: string nonce) throws (1: TOmniSciException e)
@@ -559,8 +567,9 @@ service OmniSci {
   list<string> get_all_files_in_archive(1: TSessionId session, 2: string archive_path, 3: TCopyParams copy_params) throws (1: TOmniSciException e)
   list<TGeoFileLayerInfo> get_layers_in_geo_file(1: TSessionId session, 2: string file_name, 3: TCopyParams copy_params) throws (1: TOmniSciException e)
   # distributed
+  i64 query_get_outer_fragment_count(1: TSessionId session, 2: string query) throws(1: TOmniSciException e)
   TTableMeta check_table_consistency(1: TSessionId session, 2: i32 table_id) throws (1: TOmniSciException e)
-  TPendingQuery start_query(1: TSessionId leaf_session, 2: TSessionId parent_session, 3: string query_ra, 4: bool just_explain) throws (1: TOmniSciException e)
+  TPendingQuery start_query(1: TSessionId leaf_session, 2: TSessionId parent_session, 3: string query_ra, 4: bool just_explain, 5: list<i64> outer_fragment_indices) throws (1: TOmniSciException e)
   TStepResult execute_query_step(1: TPendingQuery pending_query) throws (1: TOmniSciException e)
   void broadcast_serialized_rows(1: serialized_result_set.TSerializedRows serialized_rows, 2: TRowDescriptor row_desc, 3: TQueryId query_id) throws (1: TOmniSciException e)
   TPendingRenderQuery start_render_query(1: TSessionId session, 2: i64 widget_id, 3: i16 node_idx, 4: string vega_json) throws (1: TOmniSciException e)

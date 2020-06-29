@@ -141,6 +141,7 @@ pub enum TEncodingType {
   Sparse = 5,
   Geoint = 6,
   DateInDays = 7,
+  PackedPixelCoord = 8,
 }
 
 impl TEncodingType {
@@ -163,6 +164,7 @@ impl TryFrom<i32> for TEncodingType {
       5 => Ok(TEncodingType::Sparse),
       6 => Ok(TEncodingType::Geoint),
       7 => Ok(TEncodingType::DateInDays),
+      8 => Ok(TEncodingType::PackedPixelCoord),
       _ => {
         Err(
           thrift::Error::Protocol(

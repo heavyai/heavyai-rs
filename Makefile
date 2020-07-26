@@ -1,7 +1,8 @@
 SHELL = /bin/sh
 .DEFAULT_GOAL=test
 
-OMNISCI_VERSION=v5.3.0
+OMNISCI_VERSION=v5.3.1
+DB_CONTAINER = omnisci-test-db
 
 CURRENT_UID := $(shell id -u)
 
@@ -51,11 +52,16 @@ get_thrift: omnisci.thrift common.thrift completion_hints.thrift QueryEngine/ser
 #
 
 up:
-	docker run --name omnisci-test-db -d --rm -p 6273-6274:6273-6274 omnisci/core-os-cpu:${OMNISCI_VERSION}
+	mkdir -p /tmp/${DB_CONTAINER}
+	docker run --name ${DB_CONTAINER} -d --rm \
+		-v ${PWD}:/src \
+		-v /tmp/${DB_CONTAINER}:/omnisci-storage \
+		-p 6273-6274:6273-6274 \
+		omnisci/core-os-cpu:${OMNISCI_VERSION}
 .PHONY: up
 
 down:
-	docker stop omnisci-test-db
+	docker rm -f ${DB_CONTAINER}
 .PHONY: down
 
 docker_builder:

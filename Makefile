@@ -52,10 +52,10 @@ get_thrift: omnisci.thrift common.thrift completion_hints.thrift QueryEngine/ser
 #
 
 up:
-	mkdir -p /tmp/${DB_CONTAINER}
+	mkdir -p target/${DB_CONTAINER}
 	docker run --name ${DB_CONTAINER} -d --rm \
 		-v ${PWD}:/src \
-		-v /tmp/${DB_CONTAINER}:/omnisci-storage \
+		-v ${PWD}/target/${DB_CONTAINER}:/omnisci-storage \
 		-p 6273-6274:6273-6274 \
 		omnisci/core-os-cpu:${OMNISCI_VERSION}
 .PHONY: up

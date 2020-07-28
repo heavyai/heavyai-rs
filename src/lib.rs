@@ -10,8 +10,7 @@ pub mod omnisci;
 pub mod serialized_result_set;
 
 pub mod client {
-  use crate::omnisci::OmniSciSyncClient;
-  use crate::omnisci::TOmniSciSyncClient;
+  use crate::omnisci::{OmniSciSyncClient, TOmniSciSyncClient, TSessionId, TQueryResult, TColumn};
   use regex;
 
   use thrift::protocol::{TBinaryInputProtocol, TBinaryOutputProtocol};
@@ -40,12 +39,17 @@ pub mod client {
   }
 
   pub trait OmniSciConnection {
-    fn sql_execute(&mut self, query: String) -> thrift::Result<crate::omnisci::TQueryResult>;
+    // TODO consider weld.rs as a DataFrame API https://github.com/weld-project/weld/tree/master/weld
+    // TODO consider postres Row for request/response API https://docs.rs/postgres/0.17.5/postgres/row/struct.Row.html
+
+    fn sql_execute(&mut self, query: String, column_format: bool) -> thrift::Result<TQueryResult>;
+
+    fn load_table_binary_columnar(&mut self, table_name: &String, cols: Vec<TColumn>) -> thrift::Result<()>;
   }
 
   // TODO support other i/o protocols? <IP, OP> where IP: TInputProtocol, OP: TOutputProtocol
   pub struct OmniSciBinarySyncClient {
-    session: String,
+    session: TSessionId,
     client: OmniSciSyncClient<
       TBinaryInputProtocol<TBufferedReadTransport<ReadHalf<TTcpChannel>>>,
       TBinaryOutputProtocol<TBufferedWriteTransport<WriteHalf<TTcpChannel>>>,
@@ -53,15 +57,12 @@ pub mod client {
   }
   
   impl OmniSciConnection for OmniSciBinarySyncClient {
-    fn sql_execute(&mut self, query: String) -> thrift::Result<crate::omnisci::TQueryResult> {
-      self.client.sql_execute(
-        self.session.to_string(),
-        query,
-        false,
-        "1".to_string(),
-        10000,
-        -1,
-      )
+    fn sql_execute(&mut self, query: String, column_format: bool) -> thrift::Result<TQueryResult> {
+      self.client.sql_execute(self.session.to_string(), query, column_format, "".to_string(), -1, -1,)
+    }
+
+    fn load_table_binary_columnar(&mut self, table_name: &String, cols: Vec<TColumn>) -> thrift::Result<()> {
+      self.client.load_table_binary_columnar(self.session.to_string(), table_name.to_string(), cols)
     }
   }
 
@@ -71,7 +72,7 @@ pub mod client {
     password: &str,
     db_name: &str,
   )
-  -> Result<Box<dyn OmniSciConnection>, thrift::Error>
+  -> thrift::Result<Box<dyn OmniSciConnection>>
   {
 
     let mut c = TTcpChannel::new();
@@ -89,7 +90,7 @@ pub mod client {
   }
 
   // Example: "omnisci://admin:HyperInteractive@omnisciserver:6274/omnisci"
-  pub fn connect_url(url: &str) -> Result<Box<dyn OmniSciConnection>, thrift::Error>
+  pub fn connect_url(url: &str) -> thrift::Result<Box<dyn OmniSciConnection>>
   {
     // TODO allow optional values in url
     let re = regex::Regex::new(r"omnisci://(?P<user>.*):(?P<password>.*)@(?P<host_port>.*)/(?P<database>.*)").unwrap();

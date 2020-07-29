@@ -3,8 +3,7 @@ const OMNISCI_DB_URL: &str = "omnisci://admin:HyperInteractive@localhost:6274/om
 
 use chrono;
 use omnisci;
-use omnisci::omnisci::{TColumn, TColumnData};
-use thrift::OrderedFloat;
+use omnisci::omnisci::{TColumn};
 
 #[test]
 fn test_insert_and_query() -> Result<(), thrift::Error> {
@@ -29,13 +28,15 @@ fn test_insert_and_query() -> Result<(), thrift::Error> {
   //   table_name
   // ))?;
 
-  let date_ = TColumn::new(TColumnData::new(None, None, Some(vec![String::from("2020-10-31"), String::from("2020-10-31")]), None), vec![false, false]);
-  let trans = TColumn::new(TColumnData::new(None, None, Some(vec![String::from("BUY"), String::from("BUY")]), None), vec![false, false]);
-  let symbol = TColumn::new(TColumnData::new(None, None, Some(vec![String::from("RHAT"), String::from("GOOG")]), None), vec![false, false]);
-  let qty = TColumn::new(TColumnData::new(Some(vec![100, 100]), None, None, None), vec![false, false]);
-  let price = TColumn::new(TColumnData::new(None, Some(vec![OrderedFloat::from(35.14), OrderedFloat::from(1.1)]), None, None), vec![false, false]);
-  let vol = TColumn::new(TColumnData::new(None, Some(vec![OrderedFloat::from(12.14), OrderedFloat::from(1.1)]), None, None), vec![false, false]);
-  con.load_table_binary_columnar(&table_name, vec![date_, trans, symbol, qty, price, vol])?;
+  let data = vec!(
+    TColumn::from(vec![String::from("2020-10-31"), String::from("2020-10-31")]),
+    TColumn::from(vec![String::from("BUY"), String::from("BUY")]),
+    TColumn::from(vec![String::from("RHAT"), String::from("GOOG")]),
+    TColumn::from(vec![100, 100]),
+    TColumn::from(vec![35.14, 1.1]),
+    TColumn::from(vec![12.14, 1.1]),
+  );
+  con.load_table_binary_columnar(&table_name, data)?;
 
   let results = con.sql_execute(format!(
     "SELECT symbol, qty FROM {} WHERE symbol = 'GOOG'",

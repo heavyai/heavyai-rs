@@ -10,6 +10,7 @@ pub mod omnisci;
 pub mod serialized_result_set;
 
 pub mod client {
+  use crate::omnisci;
   use crate::omnisci::{OmniSciSyncClient, TColumn, TOmniSciSyncClient, TQueryResult, TSessionId, TColumnData};
   use regex;
   use thrift::OrderedFloat;
@@ -125,7 +126,12 @@ pub mod client {
     // TODO consider weld.rs as a DataFrame API https://github.com/weld-project/weld/tree/master/weld
     // TODO consider postres Row for request/response API https://docs.rs/postgres/0.17.5/postgres/row/struct.Row.html
 
-    fn sql_execute(&mut self, query: String, column_format: bool) -> thrift::Result<TQueryResult>;
+    fn disconnect(&mut self) -> thrift::Result<()>;
+
+    // TODO nonce for sql_execute
+    fn sql_execute(&mut self, query: String, column_format: bool, nonce: String) -> thrift::Result<TQueryResult>;
+
+    fn render_vega(&mut self, widget_id: i64, vega_json: String, compression_level: i32, nonce: String) -> thrift::Result<omnisci::TRenderResult>;
 
     fn load_table_binary_columnar(
       &mut self,
@@ -144,15 +150,24 @@ pub mod client {
     >,
   }
   impl OmniSciConnection for OmniSciBinarySyncClient {
-    fn sql_execute(&mut self, query: String, column_format: bool) -> thrift::Result<TQueryResult> {
+    fn disconnect(&mut self) -> thrift::Result<()> {
+      self.client.disconnect(self.session.to_string())
+    }
+
+    fn sql_execute(&mut self, query: String, column_format: bool, nonce: String) -> thrift::Result<TQueryResult> {
       self.client.sql_execute(
         self.session.to_string(),
         query,
         column_format,
-        "".to_string(),
+        nonce,
         -1,
         -1,
       )
+    }
+
+    fn render_vega(&mut self, widget_id: i64, vega_json: String, compression_level: i32, nonce: String)
+      -> thrift::Result<omnisci::TRenderResult> {
+        self.client.render_vega(self.session.to_string(), widget_id, vega_json, compression_level, nonce)
     }
 
     fn load_table_binary_columnar(

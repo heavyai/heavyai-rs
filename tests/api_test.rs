@@ -17,7 +17,7 @@ fn test_insert_and_query() -> Result<(), thrift::Error> {
   con.sql_execute(format!(
     "CREATE TABLE {} (date_ text, trans text, symbol text, qty int, price float, vol float);",
     table_name
-  ), false)?;
+  ), false, "test_insert_and_query".to_string())?;
 
   // con.sql_execute(format!(
   //   "INSERT INTO {} VALUES ('2020-10-31','BUY','RHAT',100,35.14,1.1);",
@@ -41,12 +41,12 @@ fn test_insert_and_query() -> Result<(), thrift::Error> {
   let results = con.sql_execute(format!(
     "SELECT symbol, qty FROM {} WHERE symbol = 'GOOG'",
     table_name
-  ), false)?;
+  ), false, "test_insert_and_query".to_string())?;
 
   assert_eq!(results.row_set.unwrap().rows.unwrap().len(), 1);
   // assert_eq!(results.row_set.unwrap().columns.unwrap()[0].data.unwrap().str_col.unwrap().len(), 1);
 
-  con.sql_execute(format!("DROP TABLE {};", table_name), false)?;
+  con.sql_execute(format!("DROP TABLE {};", table_name), false, "test_insert_and_query".to_string())?;
 
   Ok(())
 }

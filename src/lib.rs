@@ -212,7 +212,6 @@ pub mod client {
       r"omnisci://(?P<user>.*):(?P<password>.*)@(?P<host_port>.*)/(?P<database>.*)",
     )
     .unwrap();
-    // let re = regex::Regex::new(r"omnisci://(.*):(.*)@(.*)/(.*)").unwrap();
     match re.captures(&url) {
       None => panic!("Failed to parse OmniSciDB URL"),
       Some(captures) => {
@@ -220,7 +219,6 @@ pub mod client {
         let password = captures.get(2).unwrap().as_str();
         let host_port = captures.get(3).unwrap().as_str();
         let database = captures.get(4).unwrap().as_str();
-        // print!("{} {} {} {}", user, password, host_port, database);
         connect(host_port, user, password, database)
       }
     }

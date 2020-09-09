@@ -9,7 +9,7 @@ CURRENT_UID := $(shell id -u)
 -include .env
 
 deps:
-	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+	which cargo || curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 	# TODO install thrift
 .PHONY: deps
 

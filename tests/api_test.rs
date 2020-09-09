@@ -19,15 +19,6 @@ fn test_insert_and_query() -> Result<(), thrift::Error> {
     table_name
   ), false, "test_insert_and_query".to_string())?;
 
-  // con.sql_execute(format!(
-  //   "INSERT INTO {} VALUES ('2020-10-31','BUY','RHAT',100,35.14,1.1);",
-  //   table_name
-  // ))?;
-  // con.sql_execute(format!(
-  //   "INSERT INTO {} VALUES ('2020-10-31','BUY','GOOG',100,12.14,1.1);",
-  //   table_name
-  // ))?;
-
   let data = vec!(
     TColumn::from(vec![String::from("2020-10-31"), String::from("2020-10-31")]),
     TColumn::from(vec![String::from("BUY"), String::from("BUY")]),
@@ -44,7 +35,6 @@ fn test_insert_and_query() -> Result<(), thrift::Error> {
   ), false, "test_insert_and_query".to_string())?;
 
   assert_eq!(results.row_set.unwrap().rows.unwrap().len(), 1);
-  // assert_eq!(results.row_set.unwrap().columns.unwrap()[0].data.unwrap().str_col.unwrap().len(), 1);
 
   con.sql_execute(format!("DROP TABLE {};", table_name), false, "test_insert_and_query".to_string())?;
 

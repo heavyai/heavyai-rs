@@ -6,10 +6,6 @@ RUN curl --proto '=https' --tlsv1.2 -sSf \
     sh /tmp/installrust.sh -y
 ENV PATH+=/home/user/.cargo/bin
 
-# RUN useradd -ms /bin/bash user
-# USER user
-# WORKDIR /home/user
-
 RUN echo "source /usr/local/mapd-deps/mapd-deps.sh" >> "$HOME/.bashrc"
 
 RUN mkdir /src

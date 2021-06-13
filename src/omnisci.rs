@@ -2083,7 +2083,7 @@ impl From<TOmniSciException> for thrift::Error {
 
 impl Display for TOmniSciException {
   fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-    self.description().fmt(f)
+    self.to_string().fmt(f)
   }
 }
 
@@ -10292,7 +10292,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("connect", TMessageType::Exception, incoming_sequence_number);
@@ -10313,7 +10313,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("connect", TMessageType::Exception, incoming_sequence_number);
@@ -10352,7 +10352,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("krb5_connect", TMessageType::Exception, incoming_sequence_number);
@@ -10373,7 +10373,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("krb5_connect", TMessageType::Exception, incoming_sequence_number);
@@ -10412,7 +10412,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("disconnect", TMessageType::Exception, incoming_sequence_number);
@@ -10433,7 +10433,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("disconnect", TMessageType::Exception, incoming_sequence_number);
@@ -10472,7 +10472,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("switch_database", TMessageType::Exception, incoming_sequence_number);
@@ -10493,7 +10493,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("switch_database", TMessageType::Exception, incoming_sequence_number);
@@ -10532,7 +10532,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("clone_session", TMessageType::Exception, incoming_sequence_number);
@@ -10553,7 +10553,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("clone_session", TMessageType::Exception, incoming_sequence_number);
@@ -10592,7 +10592,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_server_status", TMessageType::Exception, incoming_sequence_number);
@@ -10613,7 +10613,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_server_status", TMessageType::Exception, incoming_sequence_number);
@@ -10652,7 +10652,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_status", TMessageType::Exception, incoming_sequence_number);
@@ -10673,7 +10673,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_status", TMessageType::Exception, incoming_sequence_number);
@@ -10712,7 +10712,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_hardware_info", TMessageType::Exception, incoming_sequence_number);
@@ -10733,7 +10733,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_hardware_info", TMessageType::Exception, incoming_sequence_number);
@@ -10772,7 +10772,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_tables", TMessageType::Exception, incoming_sequence_number);
@@ -10793,7 +10793,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_tables", TMessageType::Exception, incoming_sequence_number);
@@ -10832,7 +10832,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_physical_tables", TMessageType::Exception, incoming_sequence_number);
@@ -10853,7 +10853,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_physical_tables", TMessageType::Exception, incoming_sequence_number);
@@ -10892,7 +10892,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_views", TMessageType::Exception, incoming_sequence_number);
@@ -10913,7 +10913,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_views", TMessageType::Exception, incoming_sequence_number);
@@ -10952,7 +10952,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_tables_meta", TMessageType::Exception, incoming_sequence_number);
@@ -10973,7 +10973,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_tables_meta", TMessageType::Exception, incoming_sequence_number);
@@ -11012,7 +11012,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_table_details", TMessageType::Exception, incoming_sequence_number);
@@ -11033,7 +11033,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_table_details", TMessageType::Exception, incoming_sequence_number);
@@ -11072,7 +11072,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_internal_table_details", TMessageType::Exception, incoming_sequence_number);
@@ -11093,7 +11093,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_internal_table_details", TMessageType::Exception, incoming_sequence_number);
@@ -11132,7 +11132,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_users", TMessageType::Exception, incoming_sequence_number);
@@ -11153,7 +11153,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_users", TMessageType::Exception, incoming_sequence_number);
@@ -11192,7 +11192,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_databases", TMessageType::Exception, incoming_sequence_number);
@@ -11213,7 +11213,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_databases", TMessageType::Exception, incoming_sequence_number);
@@ -11252,7 +11252,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_version", TMessageType::Exception, incoming_sequence_number);
@@ -11273,7 +11273,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_version", TMessageType::Exception, incoming_sequence_number);
@@ -11312,7 +11312,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("start_heap_profile", TMessageType::Exception, incoming_sequence_number);
@@ -11333,7 +11333,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("start_heap_profile", TMessageType::Exception, incoming_sequence_number);
@@ -11372,7 +11372,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("stop_heap_profile", TMessageType::Exception, incoming_sequence_number);
@@ -11393,7 +11393,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("stop_heap_profile", TMessageType::Exception, incoming_sequence_number);
@@ -11432,7 +11432,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_heap_profile", TMessageType::Exception, incoming_sequence_number);
@@ -11453,7 +11453,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_heap_profile", TMessageType::Exception, incoming_sequence_number);
@@ -11492,7 +11492,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_memory", TMessageType::Exception, incoming_sequence_number);
@@ -11513,7 +11513,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_memory", TMessageType::Exception, incoming_sequence_number);
@@ -11552,7 +11552,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("clear_cpu_memory", TMessageType::Exception, incoming_sequence_number);
@@ -11573,7 +11573,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("clear_cpu_memory", TMessageType::Exception, incoming_sequence_number);
@@ -11612,7 +11612,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("clear_gpu_memory", TMessageType::Exception, incoming_sequence_number);
@@ -11633,7 +11633,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("clear_gpu_memory", TMessageType::Exception, incoming_sequence_number);
@@ -11672,7 +11672,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("set_table_epoch", TMessageType::Exception, incoming_sequence_number);
@@ -11693,7 +11693,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("set_table_epoch", TMessageType::Exception, incoming_sequence_number);
@@ -11732,7 +11732,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("set_table_epoch_by_name", TMessageType::Exception, incoming_sequence_number);
@@ -11753,7 +11753,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("set_table_epoch_by_name", TMessageType::Exception, incoming_sequence_number);
@@ -11790,7 +11790,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_table_epoch", TMessageType::Exception, incoming_sequence_number);
@@ -11827,7 +11827,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_table_epoch_by_name", TMessageType::Exception, incoming_sequence_number);
@@ -11866,7 +11866,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_session_info", TMessageType::Exception, incoming_sequence_number);
@@ -11887,7 +11887,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_session_info", TMessageType::Exception, incoming_sequence_number);
@@ -11926,7 +11926,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("sql_execute", TMessageType::Exception, incoming_sequence_number);
@@ -11947,7 +11947,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("sql_execute", TMessageType::Exception, incoming_sequence_number);
@@ -11986,7 +11986,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("sql_execute_df", TMessageType::Exception, incoming_sequence_number);
@@ -12007,7 +12007,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("sql_execute_df", TMessageType::Exception, incoming_sequence_number);
@@ -12046,7 +12046,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("sql_execute_gdf", TMessageType::Exception, incoming_sequence_number);
@@ -12067,7 +12067,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("sql_execute_gdf", TMessageType::Exception, incoming_sequence_number);
@@ -12106,7 +12106,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("deallocate_df", TMessageType::Exception, incoming_sequence_number);
@@ -12127,7 +12127,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("deallocate_df", TMessageType::Exception, incoming_sequence_number);
@@ -12166,7 +12166,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("interrupt", TMessageType::Exception, incoming_sequence_number);
@@ -12187,7 +12187,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("interrupt", TMessageType::Exception, incoming_sequence_number);
@@ -12226,7 +12226,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("sql_validate", TMessageType::Exception, incoming_sequence_number);
@@ -12247,7 +12247,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("sql_validate", TMessageType::Exception, incoming_sequence_number);
@@ -12286,7 +12286,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_completion_hints", TMessageType::Exception, incoming_sequence_number);
@@ -12307,7 +12307,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_completion_hints", TMessageType::Exception, incoming_sequence_number);
@@ -12346,7 +12346,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("set_execution_mode", TMessageType::Exception, incoming_sequence_number);
@@ -12367,7 +12367,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("set_execution_mode", TMessageType::Exception, incoming_sequence_number);
@@ -12406,7 +12406,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("render_vega", TMessageType::Exception, incoming_sequence_number);
@@ -12427,7 +12427,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("render_vega", TMessageType::Exception, incoming_sequence_number);
@@ -12466,7 +12466,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_result_row_for_pixel", TMessageType::Exception, incoming_sequence_number);
@@ -12487,7 +12487,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_result_row_for_pixel", TMessageType::Exception, incoming_sequence_number);
@@ -12526,7 +12526,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_dashboard", TMessageType::Exception, incoming_sequence_number);
@@ -12547,7 +12547,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_dashboard", TMessageType::Exception, incoming_sequence_number);
@@ -12586,7 +12586,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_dashboards", TMessageType::Exception, incoming_sequence_number);
@@ -12607,7 +12607,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_dashboards", TMessageType::Exception, incoming_sequence_number);
@@ -12646,7 +12646,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("create_dashboard", TMessageType::Exception, incoming_sequence_number);
@@ -12667,7 +12667,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("create_dashboard", TMessageType::Exception, incoming_sequence_number);
@@ -12706,7 +12706,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("replace_dashboard", TMessageType::Exception, incoming_sequence_number);
@@ -12727,7 +12727,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("replace_dashboard", TMessageType::Exception, incoming_sequence_number);
@@ -12766,7 +12766,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("delete_dashboard", TMessageType::Exception, incoming_sequence_number);
@@ -12787,7 +12787,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("delete_dashboard", TMessageType::Exception, incoming_sequence_number);
@@ -12826,7 +12826,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("share_dashboard", TMessageType::Exception, incoming_sequence_number);
@@ -12847,7 +12847,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("share_dashboard", TMessageType::Exception, incoming_sequence_number);
@@ -12886,7 +12886,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("unshare_dashboard", TMessageType::Exception, incoming_sequence_number);
@@ -12907,7 +12907,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("unshare_dashboard", TMessageType::Exception, incoming_sequence_number);
@@ -12946,7 +12946,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_dashboard_grantees", TMessageType::Exception, incoming_sequence_number);
@@ -12967,7 +12967,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_dashboard_grantees", TMessageType::Exception, incoming_sequence_number);
@@ -13006,7 +13006,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_link_view", TMessageType::Exception, incoming_sequence_number);
@@ -13027,7 +13027,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_link_view", TMessageType::Exception, incoming_sequence_number);
@@ -13066,7 +13066,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("create_link", TMessageType::Exception, incoming_sequence_number);
@@ -13087,7 +13087,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("create_link", TMessageType::Exception, incoming_sequence_number);
@@ -13126,7 +13126,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("load_table_binary", TMessageType::Exception, incoming_sequence_number);
@@ -13147,7 +13147,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("load_table_binary", TMessageType::Exception, incoming_sequence_number);
@@ -13186,7 +13186,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("load_table_binary_columnar", TMessageType::Exception, incoming_sequence_number);
@@ -13207,7 +13207,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("load_table_binary_columnar", TMessageType::Exception, incoming_sequence_number);
@@ -13246,7 +13246,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("load_table_binary_arrow", TMessageType::Exception, incoming_sequence_number);
@@ -13267,7 +13267,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("load_table_binary_arrow", TMessageType::Exception, incoming_sequence_number);
@@ -13306,7 +13306,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("load_table", TMessageType::Exception, incoming_sequence_number);
@@ -13327,7 +13327,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("load_table", TMessageType::Exception, incoming_sequence_number);
@@ -13366,7 +13366,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("detect_column_types", TMessageType::Exception, incoming_sequence_number);
@@ -13387,7 +13387,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("detect_column_types", TMessageType::Exception, incoming_sequence_number);
@@ -13426,7 +13426,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("create_table", TMessageType::Exception, incoming_sequence_number);
@@ -13447,7 +13447,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("create_table", TMessageType::Exception, incoming_sequence_number);
@@ -13486,7 +13486,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("import_table", TMessageType::Exception, incoming_sequence_number);
@@ -13507,7 +13507,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("import_table", TMessageType::Exception, incoming_sequence_number);
@@ -13546,7 +13546,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("import_geo_table", TMessageType::Exception, incoming_sequence_number);
@@ -13567,7 +13567,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("import_geo_table", TMessageType::Exception, incoming_sequence_number);
@@ -13606,7 +13606,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("import_table_status", TMessageType::Exception, incoming_sequence_number);
@@ -13627,7 +13627,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("import_table_status", TMessageType::Exception, incoming_sequence_number);
@@ -13666,7 +13666,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_first_geo_file_in_archive", TMessageType::Exception, incoming_sequence_number);
@@ -13687,7 +13687,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_first_geo_file_in_archive", TMessageType::Exception, incoming_sequence_number);
@@ -13726,7 +13726,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_all_files_in_archive", TMessageType::Exception, incoming_sequence_number);
@@ -13747,7 +13747,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_all_files_in_archive", TMessageType::Exception, incoming_sequence_number);
@@ -13786,7 +13786,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_layers_in_geo_file", TMessageType::Exception, incoming_sequence_number);
@@ -13807,7 +13807,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_layers_in_geo_file", TMessageType::Exception, incoming_sequence_number);
@@ -13846,7 +13846,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("check_table_consistency", TMessageType::Exception, incoming_sequence_number);
@@ -13867,7 +13867,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("check_table_consistency", TMessageType::Exception, incoming_sequence_number);
@@ -13906,7 +13906,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("start_query", TMessageType::Exception, incoming_sequence_number);
@@ -13927,7 +13927,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("start_query", TMessageType::Exception, incoming_sequence_number);
@@ -13966,7 +13966,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("execute_query_step", TMessageType::Exception, incoming_sequence_number);
@@ -13987,7 +13987,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("execute_query_step", TMessageType::Exception, incoming_sequence_number);
@@ -14026,7 +14026,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("broadcast_serialized_rows", TMessageType::Exception, incoming_sequence_number);
@@ -14047,7 +14047,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("broadcast_serialized_rows", TMessageType::Exception, incoming_sequence_number);
@@ -14086,7 +14086,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("start_render_query", TMessageType::Exception, incoming_sequence_number);
@@ -14107,7 +14107,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("start_render_query", TMessageType::Exception, incoming_sequence_number);
@@ -14146,7 +14146,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("execute_next_render_step", TMessageType::Exception, incoming_sequence_number);
@@ -14167,7 +14167,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("execute_next_render_step", TMessageType::Exception, incoming_sequence_number);
@@ -14206,7 +14206,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("insert_data", TMessageType::Exception, incoming_sequence_number);
@@ -14227,7 +14227,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("insert_data", TMessageType::Exception, incoming_sequence_number);
@@ -14266,7 +14266,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("checkpoint", TMessageType::Exception, incoming_sequence_number);
@@ -14287,7 +14287,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("checkpoint", TMessageType::Exception, incoming_sequence_number);
@@ -14326,7 +14326,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_roles", TMessageType::Exception, incoming_sequence_number);
@@ -14347,7 +14347,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_roles", TMessageType::Exception, incoming_sequence_number);
@@ -14386,7 +14386,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_db_objects_for_grantee", TMessageType::Exception, incoming_sequence_number);
@@ -14407,7 +14407,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_db_objects_for_grantee", TMessageType::Exception, incoming_sequence_number);
@@ -14446,7 +14446,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_db_object_privs", TMessageType::Exception, incoming_sequence_number);
@@ -14467,7 +14467,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_db_object_privs", TMessageType::Exception, incoming_sequence_number);
@@ -14506,7 +14506,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_all_roles_for_user", TMessageType::Exception, incoming_sequence_number);
@@ -14527,7 +14527,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_all_roles_for_user", TMessageType::Exception, incoming_sequence_number);
@@ -14566,7 +14566,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("has_role", TMessageType::Exception, incoming_sequence_number);
@@ -14587,7 +14587,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("has_role", TMessageType::Exception, incoming_sequence_number);
@@ -14626,7 +14626,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("has_object_privilege", TMessageType::Exception, incoming_sequence_number);
@@ -14647,7 +14647,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("has_object_privilege", TMessageType::Exception, incoming_sequence_number);
@@ -14686,7 +14686,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("set_license_key", TMessageType::Exception, incoming_sequence_number);
@@ -14707,7 +14707,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("set_license_key", TMessageType::Exception, incoming_sequence_number);
@@ -14746,7 +14746,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_license_claims", TMessageType::Exception, incoming_sequence_number);
@@ -14767,7 +14767,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_license_claims", TMessageType::Exception, incoming_sequence_number);
@@ -14806,7 +14806,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("get_device_parameters", TMessageType::Exception, incoming_sequence_number);
@@ -14827,7 +14827,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("get_device_parameters", TMessageType::Exception, incoming_sequence_number);
@@ -14866,7 +14866,7 @@ impl TOmniSciProcessFunctions {
               let ret_err = {
                 ApplicationError::new(
                   ApplicationErrorKind::Unknown,
-                  usr_err.description()
+                  usr_err.to_string()
                 )
               };
               let message_ident = TMessageIdentifier::new("register_runtime_extension_functions", TMessageType::Exception, incoming_sequence_number);
@@ -14887,7 +14887,7 @@ impl TOmniSciProcessFunctions {
             let ret_err = {
               ApplicationError::new(
                 ApplicationErrorKind::Unknown,
-                e.description()
+                e.to_string()
               )
             };
             let message_ident = TMessageIdentifier::new("register_runtime_extension_functions", TMessageType::Exception, incoming_sequence_number);

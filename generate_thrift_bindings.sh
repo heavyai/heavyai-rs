@@ -17,6 +17,8 @@ if ! $THRIFT_BINARY --version | grep -q 'Thrift version 0.13.0'; then
   echo 'Thrift version 0.13.0 not installed'
   if $THRIFT_BINARY --version | grep -q 'Thrift version 0.14.1'; then
     echo 'Using thrift version 0.14.1 instead'
+  elif $THRIFT_BINARY --version | grep -q 'Thrift version 0.14.2'; then
+    echo 'Using thrift version 0.14.2 instead'
   else
     exit 1
   fi

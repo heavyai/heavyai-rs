@@ -177,7 +177,8 @@ pub mod client {
     ) -> thrift::Result<()> {
       self
         .client
-        .load_table_binary_columnar(self.session.to_string(), table_name.to_string(), cols)
+        // TODO support passing the column_names param
+        .load_table_binary_columnar(self.session.to_string(), table_name.to_string(), cols, Vec::<String>::new())
     }
   }
 

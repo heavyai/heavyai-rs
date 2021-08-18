@@ -1750,6 +1750,14 @@ impl TQueryResult {
       fld_var.write_to_out_protocol(o_prot)?;
       o_prot.write_field_end()?
     }
+    if let Some(ref fld_var) = self.query_type {
+      o_prot.write_field_begin(&TFieldIdentifier::new("query_type", TType::I32, 7))?;
+      fld_var.write_to_out_protocol(o_prot)?;
+      o_prot.write_field_end()?;
+      ()
+    } else {
+      ()
+    }
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
   }

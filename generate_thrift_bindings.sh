@@ -15,7 +15,11 @@ fi
 # Check that the Thrift compiler is installed and the version we expect
 if ! $THRIFT_BINARY --version | grep -q 'Thrift version 0.13.0'; then
   echo 'Thrift version 0.13.0 not installed'
-  exit 1
+  if $THRIFT_BINARY --version | grep -q 'Thrift version 0.14.1'; then
+    echo 'Using thrift version 0.14.1 instead'
+  else
+    exit 1
+  fi
 fi
 
 # Check that the Thrift definitions exist in that folder
@@ -34,12 +38,11 @@ fi
 fix_clippy () {
   if ! grep -q '#!\[cfg_attr(feature = "cargo-clippy", allow(too_many_arguments, type_complexity))\]' $1; then
     echo "Clippy line not found in $1"
-    exit 1
-  fi
-
-  if ! perl -0777 -i -pe 's/#!\[cfg_attr\(feature = "cargo-clippy", allow\(too_many_arguments, type_complexity\)\)\]/#![cfg_attr(feature = "cargo-clippy", allow(clippy::too_many_arguments, clippy::type_complexity))]/g' $1; then
-    echo "Failed to fix clippy line in $1"
-    exit 1
+  else
+    if ! perl -0777 -i -pe 's/#!\[cfg_attr\(feature = "cargo-clippy", allow\(too_many_arguments, type_complexity\)\)\]/#![cfg_attr(feature = "cargo-clippy", allow(clippy::too_many_arguments, clippy::type_complexity))]/g' $1; then
+      echo "Failed to fix clippy line in $1"
+      exit 1
+    fi
   fi
 }
 

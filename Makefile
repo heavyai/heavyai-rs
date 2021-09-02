@@ -1,7 +1,7 @@
 SHELL = /bin/sh
 .DEFAULT_GOAL=test
 
-OMNISCI_VERSION=v5.6.4
+OMNISCI_VERSION=v5.7.0
 DB_CONTAINER = omnisci-test-db
 
 CURRENT_UID := $(shell id -u)

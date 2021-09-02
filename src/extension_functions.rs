@@ -62,16 +62,16 @@ pub enum TExtArgumentType {
   ColumnDouble = 32,
   ColumnBool = 33,
   TextEncodingNone = 34,
-  TextEncodingDict8 = 35,
-  TextEncodingDict16 = 36,
-  TextEncodingDict32 = 37,
-  ColumnListInt8 = 38,
-  ColumnListInt16 = 39,
-  ColumnListInt32 = 40,
-  ColumnListInt64 = 41,
-  ColumnListFloat = 42,
-  ColumnListDouble = 43,
-  ColumnListBool = 44,
+  TextEncodingDict = 35,
+  ColumnListInt8 = 36,
+  ColumnListInt16 = 37,
+  ColumnListInt32 = 38,
+  ColumnListInt64 = 39,
+  ColumnListFloat = 40,
+  ColumnListDouble = 41,
+  ColumnListBool = 42,
+  ColumnTextEncodingDict = 43,
+  ColumnListTextEncodingDict = 44,
 }
 
 impl TExtArgumentType {
@@ -121,16 +121,16 @@ impl TryFrom<i32> for TExtArgumentType {
       32 => Ok(TExtArgumentType::ColumnDouble),
       33 => Ok(TExtArgumentType::ColumnBool),
       34 => Ok(TExtArgumentType::TextEncodingNone),
-      35 => Ok(TExtArgumentType::TextEncodingDict8),
-      36 => Ok(TExtArgumentType::TextEncodingDict16),
-      37 => Ok(TExtArgumentType::TextEncodingDict32),
-      38 => Ok(TExtArgumentType::ColumnListInt8),
-      39 => Ok(TExtArgumentType::ColumnListInt16),
-      40 => Ok(TExtArgumentType::ColumnListInt32),
-      41 => Ok(TExtArgumentType::ColumnListInt64),
-      42 => Ok(TExtArgumentType::ColumnListFloat),
-      43 => Ok(TExtArgumentType::ColumnListDouble),
-      44 => Ok(TExtArgumentType::ColumnListBool),
+      35 => Ok(TExtArgumentType::TextEncodingDict),
+      36 => Ok(TExtArgumentType::ColumnListInt8),
+      37 => Ok(TExtArgumentType::ColumnListInt16),
+      38 => Ok(TExtArgumentType::ColumnListInt32),
+      39 => Ok(TExtArgumentType::ColumnListInt64),
+      40 => Ok(TExtArgumentType::ColumnListFloat),
+      41 => Ok(TExtArgumentType::ColumnListDouble),
+      42 => Ok(TExtArgumentType::ColumnListBool),
+      43 => Ok(TExtArgumentType::ColumnTextEncodingDict),
+      44 => Ok(TExtArgumentType::ColumnListTextEncodingDict),
       _ => {
         Err(
           thrift::Error::Protocol(
@@ -150,6 +150,7 @@ pub enum TOutputBufferSizeType {
   KConstant = 0,
   KUserSpecifiedConstantParameter = 1,
   KUserSpecifiedRowMultiplier = 2,
+  KTableFunctionSpecifiedParameter = 3,
 }
 
 impl TOutputBufferSizeType {
@@ -167,6 +168,7 @@ impl TryFrom<i32> for TOutputBufferSizeType {
       0 => Ok(TOutputBufferSizeType::KConstant),
       1 => Ok(TOutputBufferSizeType::KUserSpecifiedConstantParameter),
       2 => Ok(TOutputBufferSizeType::KUserSpecifiedRowMultiplier),
+      3 => Ok(TOutputBufferSizeType::KTableFunctionSpecifiedParameter),
       _ => {
         Err(
           thrift::Error::Protocol(
@@ -293,10 +295,11 @@ pub struct TUserDefinedTableFunction {
   pub input_arg_types: Option<Vec<TExtArgumentType>>,
   pub output_arg_types: Option<Vec<TExtArgumentType>>,
   pub sql_arg_types: Option<Vec<TExtArgumentType>>,
+  pub annotations: Option<Vec<BTreeMap<String, String>>>,
 }
 
 impl TUserDefinedTableFunction {
-  pub fn new<F1, F2, F3, F4, F5, F6>(name: F1, sizer_type: F2, sizer_arg_pos: F3, input_arg_types: F4, output_arg_types: F5, sql_arg_types: F6) -> TUserDefinedTableFunction where F1: Into<Option<String>>, F2: Into<Option<TOutputBufferSizeType>>, F3: Into<Option<i32>>, F4: Into<Option<Vec<TExtArgumentType>>>, F5: Into<Option<Vec<TExtArgumentType>>>, F6: Into<Option<Vec<TExtArgumentType>>> {
+  pub fn new<F1, F2, F3, F4, F5, F6, F7>(name: F1, sizer_type: F2, sizer_arg_pos: F3, input_arg_types: F4, output_arg_types: F5, sql_arg_types: F6, annotations: F7) -> TUserDefinedTableFunction where F1: Into<Option<String>>, F2: Into<Option<TOutputBufferSizeType>>, F3: Into<Option<i32>>, F4: Into<Option<Vec<TExtArgumentType>>>, F5: Into<Option<Vec<TExtArgumentType>>>, F6: Into<Option<Vec<TExtArgumentType>>>, F7: Into<Option<Vec<BTreeMap<String, String>>>> {
     TUserDefinedTableFunction {
       name: name.into(),
       sizer_type: sizer_type.into(),
@@ -304,6 +307,7 @@ impl TUserDefinedTableFunction {
       input_arg_types: input_arg_types.into(),
       output_arg_types: output_arg_types.into(),
       sql_arg_types: sql_arg_types.into(),
+      annotations: annotations.into(),
     }
   }
   pub fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<TUserDefinedTableFunction> {
@@ -314,6 +318,7 @@ impl TUserDefinedTableFunction {
     let mut f_4: Option<Vec<TExtArgumentType>> = Some(Vec::new());
     let mut f_5: Option<Vec<TExtArgumentType>> = Some(Vec::new());
     let mut f_6: Option<Vec<TExtArgumentType>> = Some(Vec::new());
+    let mut f_7: Option<Vec<BTreeMap<String, String>>> = Some(Vec::new());
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -363,6 +368,23 @@ impl TUserDefinedTableFunction {
           i_prot.read_list_end()?;
           f_6 = Some(val);
         },
+        7 => {
+          let list_ident = i_prot.read_list_begin()?;
+          let mut val: Vec<BTreeMap<String, String>> = Vec::with_capacity(list_ident.size as usize);
+          for _ in 0..list_ident.size {
+            let map_ident = i_prot.read_map_begin()?;
+            let mut list_elem_4: BTreeMap<String, String> = BTreeMap::new();
+            for _ in 0..map_ident.size {
+              let map_key_5 = i_prot.read_string()?;
+              let map_val_6 = i_prot.read_string()?;
+              list_elem_4.insert(map_key_5, map_val_6);
+            }
+            i_prot.read_map_end()?;
+            val.push(list_elem_4);
+          }
+          i_prot.read_list_end()?;
+          f_7 = Some(val);
+        },
         _ => {
           i_prot.skip(field_ident.field_type)?;
         },
@@ -377,6 +399,7 @@ impl TUserDefinedTableFunction {
       input_arg_types: f_4,
       output_arg_types: f_5,
       sql_arg_types: f_6,
+      annotations: f_7,
     };
     Ok(ret)
   }
@@ -425,6 +448,20 @@ impl TUserDefinedTableFunction {
       }
       o_prot.write_field_end()?
     }
+    if let Some(ref fld_var) = self.annotations {
+      o_prot.write_field_begin(&TFieldIdentifier::new("annotations", TType::List, 7))?;
+      o_prot.write_list_begin(&TListIdentifier::new(TType::Map, fld_var.len() as i32))?;
+      for e in fld_var {
+        o_prot.write_map_begin(&TMapIdentifier::new(TType::String, TType::String, e.len() as i32))?;
+        for (k, v) in e {
+          o_prot.write_string(k)?;
+          o_prot.write_string(v)?;
+          o_prot.write_map_end()?;
+        }
+        o_prot.write_list_end()?;
+      }
+      o_prot.write_field_end()?
+    }
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
   }
@@ -439,6 +476,7 @@ impl Default for TUserDefinedTableFunction {
       input_arg_types: Some(Vec::new()),
       output_arg_types: Some(Vec::new()),
       sql_arg_types: Some(Vec::new()),
+      annotations: Some(Vec::new()),
     }
   }
 }

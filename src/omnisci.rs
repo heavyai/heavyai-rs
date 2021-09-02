@@ -438,6 +438,38 @@ impl TryFrom<i32> for TDBObjectType {
   }
 }
 
+#[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum TDataSourceType {
+  Table = 0,
+}
+
+impl TDataSourceType {
+  pub fn write_to_out_protocol(self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    o_prot.write_i32(self as i32)
+  }
+  pub fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<TDataSourceType> {
+    let enum_value = i_prot.read_i32()?;
+    TDataSourceType::try_from(enum_value)  }
+}
+
+impl TryFrom<i32> for TDataSourceType {
+  type Error = thrift::Error;  fn try_from(i: i32) -> Result<Self, Self::Error> {
+    match i {
+      0 => Ok(TDataSourceType::Table),
+      _ => {
+        Err(
+          thrift::Error::Protocol(
+            ProtocolError::new(
+              ProtocolErrorKind::InvalidData,
+              format!("cannot convert enum constant {} to TDataSourceType", i)
+            )
+          )
+        )
+      },
+    }
+  }
+}
+
 pub type TRowDescriptor = Vec<TColumnType>;
 
 pub type TSessionId = String;
@@ -731,10 +763,11 @@ pub struct TColumnType {
   pub is_system: Option<bool>,
   pub is_physical: Option<bool>,
   pub col_id: Option<i64>,
+  pub default_value: Option<String>,
 }
 
 impl TColumnType {
-  pub fn new<F1, F2, F3, F4, F5, F6, F7>(col_name: F1, col_type: F2, is_reserved_keyword: F3, src_name: F4, is_system: F5, is_physical: F6, col_id: F7) -> TColumnType where F1: Into<Option<String>>, F2: Into<Option<common::TTypeInfo>>, F3: Into<Option<bool>>, F4: Into<Option<String>>, F5: Into<Option<bool>>, F6: Into<Option<bool>>, F7: Into<Option<i64>> {
+  pub fn new<F1, F2, F3, F4, F5, F6, F7, F8>(col_name: F1, col_type: F2, is_reserved_keyword: F3, src_name: F4, is_system: F5, is_physical: F6, col_id: F7, default_value: F8) -> TColumnType where F1: Into<Option<String>>, F2: Into<Option<common::TTypeInfo>>, F3: Into<Option<bool>>, F4: Into<Option<String>>, F5: Into<Option<bool>>, F6: Into<Option<bool>>, F7: Into<Option<i64>>, F8: Into<Option<String>> {
     TColumnType {
       col_name: col_name.into(),
       col_type: col_type.into(),
@@ -743,6 +776,7 @@ impl TColumnType {
       is_system: is_system.into(),
       is_physical: is_physical.into(),
       col_id: col_id.into(),
+      default_value: default_value.into(),
     }
   }
   pub fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<TColumnType> {
@@ -754,6 +788,7 @@ impl TColumnType {
     let mut f_5: Option<bool> = Some(false);
     let mut f_6: Option<bool> = Some(false);
     let mut f_7: Option<i64> = Some(0);
+    let mut f_8: Option<String> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -789,6 +824,10 @@ impl TColumnType {
           let val = i_prot.read_i64()?;
           f_7 = Some(val);
         },
+        8 => {
+          let val = i_prot.read_string()?;
+          f_8 = Some(val);
+        },
         _ => {
           i_prot.skip(field_ident.field_type)?;
         },
@@ -804,6 +843,7 @@ impl TColumnType {
       is_system: f_5,
       is_physical: f_6,
       col_id: f_7,
+      default_value: f_8,
     };
     Ok(ret)
   }
@@ -845,6 +885,11 @@ impl TColumnType {
       o_prot.write_i64(fld_var)?;
       o_prot.write_field_end()?
     }
+    if let Some(ref fld_var) = self.default_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("default_value", TType::String, 8))?;
+      o_prot.write_string(fld_var)?;
+      o_prot.write_field_end()?
+    }
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
   }
@@ -860,6 +905,7 @@ impl Default for TColumnType {
       is_system: Some(false),
       is_physical: Some(false),
       col_id: Some(0),
+      default_value: Some("".to_owned()),
     }
   }
 }
@@ -2069,10 +2115,11 @@ pub struct TCopyParams {
   pub geo_assign_render_groups: Option<bool>,
   pub geo_explode_collections: Option<bool>,
   pub source_srid: Option<i32>,
+  pub s3_session_token: Option<String>,
 }
 
 impl TCopyParams {
-  pub fn new<F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20, F21, F22, F23, F24, F25>(delimiter: F1, null_str: F2, has_header: F3, quoted: F4, quote: F5, escape: F6, line_delim: F7, array_delim: F8, array_begin: F9, array_end: F10, threads: F11, file_type: F12, s3_access_key: F13, s3_secret_key: F14, s3_region: F15, geo_coords_encoding: F16, geo_coords_comp_param: F17, geo_coords_type: F18, geo_coords_srid: F19, sanitize_column_names: F20, geo_layer_name: F21, s3_endpoint: F22, geo_assign_render_groups: F23, geo_explode_collections: F24, source_srid: F25) -> TCopyParams where F1: Into<Option<String>>, F2: Into<Option<String>>, F3: Into<Option<TImportHeaderRow>>, F4: Into<Option<bool>>, F5: Into<Option<String>>, F6: Into<Option<String>>, F7: Into<Option<String>>, F8: Into<Option<String>>, F9: Into<Option<String>>, F10: Into<Option<String>>, F11: Into<Option<i32>>, F12: Into<Option<TFileType>>, F13: Into<Option<String>>, F14: Into<Option<String>>, F15: Into<Option<String>>, F16: Into<Option<common::TEncodingType>>, F17: Into<Option<i32>>, F18: Into<Option<common::TDatumType>>, F19: Into<Option<i32>>, F20: Into<Option<bool>>, F21: Into<Option<String>>, F22: Into<Option<String>>, F23: Into<Option<bool>>, F24: Into<Option<bool>>, F25: Into<Option<i32>> {
+  pub fn new<F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20, F21, F22, F23, F24, F25, F26>(delimiter: F1, null_str: F2, has_header: F3, quoted: F4, quote: F5, escape: F6, line_delim: F7, array_delim: F8, array_begin: F9, array_end: F10, threads: F11, file_type: F12, s3_access_key: F13, s3_secret_key: F14, s3_region: F15, geo_coords_encoding: F16, geo_coords_comp_param: F17, geo_coords_type: F18, geo_coords_srid: F19, sanitize_column_names: F20, geo_layer_name: F21, s3_endpoint: F22, geo_assign_render_groups: F23, geo_explode_collections: F24, source_srid: F25, s3_session_token: F26) -> TCopyParams where F1: Into<Option<String>>, F2: Into<Option<String>>, F3: Into<Option<TImportHeaderRow>>, F4: Into<Option<bool>>, F5: Into<Option<String>>, F6: Into<Option<String>>, F7: Into<Option<String>>, F8: Into<Option<String>>, F9: Into<Option<String>>, F10: Into<Option<String>>, F11: Into<Option<i32>>, F12: Into<Option<TFileType>>, F13: Into<Option<String>>, F14: Into<Option<String>>, F15: Into<Option<String>>, F16: Into<Option<common::TEncodingType>>, F17: Into<Option<i32>>, F18: Into<Option<common::TDatumType>>, F19: Into<Option<i32>>, F20: Into<Option<bool>>, F21: Into<Option<String>>, F22: Into<Option<String>>, F23: Into<Option<bool>>, F24: Into<Option<bool>>, F25: Into<Option<i32>>, F26: Into<Option<String>> {
     TCopyParams {
       delimiter: delimiter.into(),
       null_str: null_str.into(),
@@ -2099,6 +2146,7 @@ impl TCopyParams {
       geo_assign_render_groups: geo_assign_render_groups.into(),
       geo_explode_collections: geo_explode_collections.into(),
       source_srid: source_srid.into(),
+      s3_session_token: s3_session_token.into(),
     }
   }
   pub fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<TCopyParams> {
@@ -2128,6 +2176,7 @@ impl TCopyParams {
     let mut f_23: Option<bool> = Some(false);
     let mut f_24: Option<bool> = Some(false);
     let mut f_25: Option<i32> = Some(0);
+    let mut f_26: Option<String> = Some("".to_owned());
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -2235,6 +2284,10 @@ impl TCopyParams {
           let val = i_prot.read_i32()?;
           f_25 = Some(val);
         },
+        26 => {
+          let val = i_prot.read_string()?;
+          f_26 = Some(val);
+        },
         _ => {
           i_prot.skip(field_ident.field_type)?;
         },
@@ -2268,6 +2321,7 @@ impl TCopyParams {
       geo_assign_render_groups: f_23,
       geo_explode_collections: f_24,
       source_srid: f_25,
+      s3_session_token: f_26,
     };
     Ok(ret)
   }
@@ -2399,6 +2453,11 @@ impl TCopyParams {
       o_prot.write_i32(fld_var)?;
       o_prot.write_field_end()?
     }
+    if let Some(ref fld_var) = self.s3_session_token {
+      o_prot.write_field_begin(&TFieldIdentifier::new("s3_session_token", TType::String, 26))?;
+      o_prot.write_string(fld_var)?;
+      o_prot.write_field_end()?
+    }
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
   }
@@ -2432,6 +2491,7 @@ impl Default for TCopyParams {
       geo_assign_render_groups: Some(false),
       geo_explode_collections: Some(false),
       source_srid: Some(0),
+      s3_session_token: Some("".to_owned()),
     }
   }
 }
@@ -2810,10 +2870,11 @@ pub struct TServerStatus {
   pub host_name: Option<String>,
   pub poly_rendering_enabled: Option<bool>,
   pub role: Option<TRole>,
+  pub renderer_status_json: Option<String>,
 }
 
 impl TServerStatus {
-  pub fn new<F1, F2, F3, F4, F5, F6, F7, F8>(read_only: F1, version: F2, rendering_enabled: F3, start_time: F4, edition: F5, host_name: F6, poly_rendering_enabled: F7, role: F8) -> TServerStatus where F1: Into<Option<bool>>, F2: Into<Option<String>>, F3: Into<Option<bool>>, F4: Into<Option<i64>>, F5: Into<Option<String>>, F6: Into<Option<String>>, F7: Into<Option<bool>>, F8: Into<Option<TRole>> {
+  pub fn new<F1, F2, F3, F4, F5, F6, F7, F8, F9>(read_only: F1, version: F2, rendering_enabled: F3, start_time: F4, edition: F5, host_name: F6, poly_rendering_enabled: F7, role: F8, renderer_status_json: F9) -> TServerStatus where F1: Into<Option<bool>>, F2: Into<Option<String>>, F3: Into<Option<bool>>, F4: Into<Option<i64>>, F5: Into<Option<String>>, F6: Into<Option<String>>, F7: Into<Option<bool>>, F8: Into<Option<TRole>>, F9: Into<Option<String>> {
     TServerStatus {
       read_only: read_only.into(),
       version: version.into(),
@@ -2823,6 +2884,7 @@ impl TServerStatus {
       host_name: host_name.into(),
       poly_rendering_enabled: poly_rendering_enabled.into(),
       role: role.into(),
+      renderer_status_json: renderer_status_json.into(),
     }
   }
   pub fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<TServerStatus> {
@@ -2835,6 +2897,7 @@ impl TServerStatus {
     let mut f_6: Option<String> = Some("".to_owned());
     let mut f_7: Option<bool> = Some(false);
     let mut f_8: Option<TRole> = None;
+    let mut f_9: Option<String> = Some("".to_owned());
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -2874,6 +2937,10 @@ impl TServerStatus {
           let val = TRole::read_from_in_protocol(i_prot)?;
           f_8 = Some(val);
         },
+        9 => {
+          let val = i_prot.read_string()?;
+          f_9 = Some(val);
+        },
         _ => {
           i_prot.skip(field_ident.field_type)?;
         },
@@ -2890,6 +2957,7 @@ impl TServerStatus {
       host_name: f_6,
       poly_rendering_enabled: f_7,
       role: f_8,
+      renderer_status_json: f_9,
     };
     Ok(ret)
   }
@@ -2936,6 +3004,11 @@ impl TServerStatus {
       fld_var.write_to_out_protocol(o_prot)?;
       o_prot.write_field_end()?
     }
+    if let Some(ref fld_var) = self.renderer_status_json {
+      o_prot.write_field_begin(&TFieldIdentifier::new("renderer_status_json", TType::String, 9))?;
+      o_prot.write_string(fld_var)?;
+      o_prot.write_field_end()?
+    }
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
   }
@@ -2952,6 +3025,7 @@ impl Default for TServerStatus {
       host_name: Some("".to_owned()),
       poly_rendering_enabled: Some(false),
       role: None,
+      renderer_status_json: Some("".to_owned()),
     }
   }
 }
@@ -6608,16 +6682,18 @@ pub struct TDBObject {
   pub privs: Option<Vec<bool>>,
   pub grantee: Option<String>,
   pub privilege_object_type: Option<TDBObjectType>,
+  pub object_id: Option<i32>,
 }
 
 impl TDBObject {
-  pub fn new<F1, F2, F3, F4, F5>(object_name: F1, object_type: F2, privs: F3, grantee: F4, privilege_object_type: F5) -> TDBObject where F1: Into<Option<String>>, F2: Into<Option<TDBObjectType>>, F3: Into<Option<Vec<bool>>>, F4: Into<Option<String>>, F5: Into<Option<TDBObjectType>> {
+  pub fn new<F1, F2, F3, F4, F5, F6>(object_name: F1, object_type: F2, privs: F3, grantee: F4, privilege_object_type: F5, object_id: F6) -> TDBObject where F1: Into<Option<String>>, F2: Into<Option<TDBObjectType>>, F3: Into<Option<Vec<bool>>>, F4: Into<Option<String>>, F5: Into<Option<TDBObjectType>>, F6: Into<Option<i32>> {
     TDBObject {
       object_name: object_name.into(),
       object_type: object_type.into(),
       privs: privs.into(),
       grantee: grantee.into(),
       privilege_object_type: privilege_object_type.into(),
+      object_id: object_id.into(),
     }
   }
   pub fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<TDBObject> {
@@ -6627,6 +6703,7 @@ impl TDBObject {
     let mut f_3: Option<Vec<bool>> = Some(Vec::new());
     let mut f_4: Option<String> = Some("".to_owned());
     let mut f_5: Option<TDBObjectType> = None;
+    let mut f_6: Option<i32> = Some(0);
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -6660,6 +6737,10 @@ impl TDBObject {
           let val = TDBObjectType::read_from_in_protocol(i_prot)?;
           f_5 = Some(val);
         },
+        6 => {
+          let val = i_prot.read_i32()?;
+          f_6 = Some(val);
+        },
         _ => {
           i_prot.skip(field_ident.field_type)?;
         },
@@ -6673,6 +6754,7 @@ impl TDBObject {
       privs: f_3,
       grantee: f_4,
       privilege_object_type: f_5,
+      object_id: f_6,
     };
     Ok(ret)
   }
@@ -6708,6 +6790,11 @@ impl TDBObject {
       fld_var.write_to_out_protocol(o_prot)?;
       o_prot.write_field_end()?
     }
+    if let Some(fld_var) = self.object_id {
+      o_prot.write_field_begin(&TFieldIdentifier::new("objectId", TType::I32, 6))?;
+      o_prot.write_i32(fld_var)?;
+      o_prot.write_field_end()?
+    }
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
   }
@@ -6721,6 +6808,7 @@ impl Default for TDBObject {
       privs: Some(Vec::new()),
       grantee: Some("".to_owned()),
       privilege_object_type: None,
+      object_id: Some(0),
     }
   }
 }
@@ -7332,6 +7420,138 @@ impl Default for TTableEpochInfo {
 }
 
 //
+// TCustomExpression
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct TCustomExpression {
+  pub id: Option<i32>,
+  pub name: Option<String>,
+  pub expression_json: Option<String>,
+  pub data_source_type: Option<TDataSourceType>,
+  pub data_source_id: Option<i32>,
+  pub is_deleted: Option<bool>,
+}
+
+impl TCustomExpression {
+  pub fn new<F1, F2, F4, F5, F6, F7>(id: F1, name: F2, expression_json: F4, data_source_type: F5, data_source_id: F6, is_deleted: F7) -> TCustomExpression where F1: Into<Option<i32>>, F2: Into<Option<String>>, F4: Into<Option<String>>, F5: Into<Option<TDataSourceType>>, F6: Into<Option<i32>>, F7: Into<Option<bool>> {
+    TCustomExpression {
+      id: id.into(),
+      name: name.into(),
+      expression_json: expression_json.into(),
+      data_source_type: data_source_type.into(),
+      data_source_id: data_source_id.into(),
+      is_deleted: is_deleted.into(),
+    }
+  }
+  pub fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<TCustomExpression> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<i32> = Some(0);
+    let mut f_2: Option<String> = Some("".to_owned());
+    let mut f_4: Option<String> = Some("".to_owned());
+    let mut f_5: Option<TDataSourceType> = None;
+    let mut f_6: Option<i32> = Some(0);
+    let mut f_7: Option<bool> = Some(false);
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_i32()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_string()?;
+          f_2 = Some(val);
+        },
+        4 => {
+          let val = i_prot.read_string()?;
+          f_4 = Some(val);
+        },
+        5 => {
+          let val = TDataSourceType::read_from_in_protocol(i_prot)?;
+          f_5 = Some(val);
+        },
+        6 => {
+          let val = i_prot.read_i32()?;
+          f_6 = Some(val);
+        },
+        7 => {
+          let val = i_prot.read_bool()?;
+          f_7 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = TCustomExpression {
+      id: f_1,
+      name: f_2,
+      expression_json: f_4,
+      data_source_type: f_5,
+      data_source_id: f_6,
+      is_deleted: f_7,
+    };
+    Ok(ret)
+  }
+  pub fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("TCustomExpression");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(fld_var) = self.id {
+      o_prot.write_field_begin(&TFieldIdentifier::new("id", TType::I32, 1))?;
+      o_prot.write_i32(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    if let Some(ref fld_var) = self.name {
+      o_prot.write_field_begin(&TFieldIdentifier::new("name", TType::String, 2))?;
+      o_prot.write_string(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    if let Some(ref fld_var) = self.expression_json {
+      o_prot.write_field_begin(&TFieldIdentifier::new("expression_json", TType::String, 4))?;
+      o_prot.write_string(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    if let Some(ref fld_var) = self.data_source_type {
+      o_prot.write_field_begin(&TFieldIdentifier::new("data_source_type", TType::I32, 5))?;
+      fld_var.write_to_out_protocol(o_prot)?;
+      o_prot.write_field_end()?
+    }
+    if let Some(fld_var) = self.data_source_id {
+      o_prot.write_field_begin(&TFieldIdentifier::new("data_source_id", TType::I32, 6))?;
+      o_prot.write_i32(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    if let Some(fld_var) = self.is_deleted {
+      o_prot.write_field_begin(&TFieldIdentifier::new("is_deleted", TType::Bool, 7))?;
+      o_prot.write_bool(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+impl Default for TCustomExpression {
+  fn default() -> Self {
+    TCustomExpression{
+      id: Some(0),
+      name: Some("".to_owned()),
+      expression_json: Some("".to_owned()),
+      data_source_type: None,
+      data_source_id: Some(0),
+      is_deleted: Some(false),
+    }
+  }
+}
+
+//
 // OmniSci service client
 //
 
@@ -7345,11 +7565,14 @@ pub trait TOmniSciSyncClient {
   fn get_status(&mut self, session: TSessionId) -> thrift::Result<Vec<TServerStatus>>;
   fn get_hardware_info(&mut self, session: TSessionId) -> thrift::Result<TClusterHardwareInfo>;
   fn get_tables(&mut self, session: TSessionId) -> thrift::Result<Vec<String>>;
+  fn get_tables_for_database(&mut self, session: TSessionId, database_name: String) -> thrift::Result<Vec<String>>;
   fn get_physical_tables(&mut self, session: TSessionId) -> thrift::Result<Vec<String>>;
   fn get_views(&mut self, session: TSessionId) -> thrift::Result<Vec<String>>;
   fn get_tables_meta(&mut self, session: TSessionId) -> thrift::Result<Vec<TTableMeta>>;
   fn get_table_details(&mut self, session: TSessionId, table_name: String) -> thrift::Result<TTableDetails>;
+  fn get_table_details_for_database(&mut self, session: TSessionId, table_name: String, database_name: String) -> thrift::Result<TTableDetails>;
   fn get_internal_table_details(&mut self, session: TSessionId, table_name: String) -> thrift::Result<TTableDetails>;
+  fn get_internal_table_details_for_database(&mut self, session: TSessionId, table_name: String, database_name: String) -> thrift::Result<TTableDetails>;
   fn get_users(&mut self, session: TSessionId) -> thrift::Result<Vec<String>>;
   fn get_databases(&mut self, session: TSessionId) -> thrift::Result<Vec<TDBInfo>>;
   fn get_version(&mut self) -> thrift::Result<String>;
@@ -7359,8 +7582,8 @@ pub trait TOmniSciSyncClient {
   fn get_memory(&mut self, session: TSessionId, memory_level: String) -> thrift::Result<Vec<TNodeMemoryInfo>>;
   fn clear_cpu_memory(&mut self, session: TSessionId) -> thrift::Result<()>;
   fn clear_gpu_memory(&mut self, session: TSessionId) -> thrift::Result<()>;
-  fn set_cur_session(&mut self, parent_session: TSessionId, leaf_session: TSessionId, start_time_str: String, label: String) -> thrift::Result<()>;
-  fn invalidate_cur_session(&mut self, parent_session: TSessionId, leaf_session: TSessionId, start_time_str: String, label: String) -> thrift::Result<()>;
+  fn set_cur_session(&mut self, parent_session: TSessionId, leaf_session: TSessionId, start_time_str: String, label: String, for_running_query_kernel: bool) -> thrift::Result<()>;
+  fn invalidate_cur_session(&mut self, parent_session: TSessionId, leaf_session: TSessionId, start_time_str: String, label: String, for_running_query_kernel: bool) -> thrift::Result<()>;
   fn set_table_epoch(&mut self, session: TSessionId, db_id: i32, table_id: i32, new_epoch: i32) -> thrift::Result<()>;
   fn set_table_epoch_by_name(&mut self, session: TSessionId, table_name: String, new_epoch: i32) -> thrift::Result<()>;
   fn get_table_epoch(&mut self, session: TSessionId, db_id: i32, table_id: i32) -> thrift::Result<i32>;
@@ -7378,6 +7601,10 @@ pub trait TOmniSciSyncClient {
   fn set_execution_mode(&mut self, session: TSessionId, mode: TExecuteMode) -> thrift::Result<()>;
   fn render_vega(&mut self, session: TSessionId, widget_id: i64, vega_json: String, compression_level: i32, nonce: String) -> thrift::Result<TRenderResult>;
   fn get_result_row_for_pixel(&mut self, session: TSessionId, widget_id: i64, pixel: TPixel, table_col_names: BTreeMap<String, Vec<String>>, column_format: bool, pixel_radius: i32, nonce: String) -> thrift::Result<TPixelTableRowResult>;
+  fn create_custom_expression(&mut self, session: TSessionId, custom_expression: TCustomExpression) -> thrift::Result<i32>;
+  fn get_custom_expressions(&mut self, session: TSessionId) -> thrift::Result<Vec<TCustomExpression>>;
+  fn update_custom_expression(&mut self, session: TSessionId, id: i32, expression_json: String) -> thrift::Result<()>;
+  fn delete_custom_expressions(&mut self, session: TSessionId, custom_expression_ids: Vec<i32>, do_soft_delete: bool) -> thrift::Result<()>;
   fn get_dashboard(&mut self, session: TSessionId, dashboard_id: i32) -> thrift::Result<TDashboard>;
   fn get_dashboards(&mut self, session: TSessionId) -> thrift::Result<Vec<TDashboard>>;
   fn create_dashboard(&mut self, session: TSessionId, dashboard_name: String, dashboard_state: String, image_hash: String, dashboard_metadata: String) -> thrift::Result<i32>;
@@ -7692,6 +7919,33 @@ impl <C: TThriftClient + TOmniSciSyncClientMarker> TOmniSciSyncClient for C {
       result.ok_or()
     }
   }
+  fn get_tables_for_database(&mut self, session: TSessionId, database_name: String) -> thrift::Result<Vec<String>> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("get_tables_for_database", TMessageType::Call, self.sequence_number());
+        let call_args = OmniSciGetTablesForDatabaseArgs { session, database_name };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("get_tables_for_database", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = OmniSciGetTablesForDatabaseResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
   fn get_physical_tables(&mut self, session: TSessionId) -> thrift::Result<Vec<String>> {
     (
       {
@@ -7800,6 +8054,33 @@ impl <C: TThriftClient + TOmniSciSyncClientMarker> TOmniSciSyncClient for C {
       result.ok_or()
     }
   }
+  fn get_table_details_for_database(&mut self, session: TSessionId, table_name: String, database_name: String) -> thrift::Result<TTableDetails> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("get_table_details_for_database", TMessageType::Call, self.sequence_number());
+        let call_args = OmniSciGetTableDetailsForDatabaseArgs { session, table_name, database_name };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("get_table_details_for_database", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = OmniSciGetTableDetailsForDatabaseResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
   fn get_internal_table_details(&mut self, session: TSessionId, table_name: String) -> thrift::Result<TTableDetails> {
     (
       {
@@ -7823,6 +8104,33 @@ impl <C: TThriftClient + TOmniSciSyncClientMarker> TOmniSciSyncClient for C {
       }
       verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
       let result = OmniSciGetInternalTableDetailsResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn get_internal_table_details_for_database(&mut self, session: TSessionId, table_name: String, database_name: String) -> thrift::Result<TTableDetails> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("get_internal_table_details_for_database", TMessageType::Call, self.sequence_number());
+        let call_args = OmniSciGetInternalTableDetailsForDatabaseArgs { session, table_name, database_name };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("get_internal_table_details_for_database", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = OmniSciGetInternalTableDetailsForDatabaseResult::read_from_in_protocol(self.i_prot_mut())?;
       self.i_prot_mut().read_message_end()?;
       result.ok_or()
     }
@@ -8070,12 +8378,12 @@ impl <C: TThriftClient + TOmniSciSyncClientMarker> TOmniSciSyncClient for C {
       result.ok_or()
     }
   }
-  fn set_cur_session(&mut self, parent_session: TSessionId, leaf_session: TSessionId, start_time_str: String, label: String) -> thrift::Result<()> {
+  fn set_cur_session(&mut self, parent_session: TSessionId, leaf_session: TSessionId, start_time_str: String, label: String, for_running_query_kernel: bool) -> thrift::Result<()> {
     (
       {
         self.increment_sequence_number();
         let message_ident = TMessageIdentifier::new("set_cur_session", TMessageType::Call, self.sequence_number());
-        let call_args = OmniSciSetCurSessionArgs { parent_session, leaf_session, start_time_str, label };
+        let call_args = OmniSciSetCurSessionArgs { parent_session, leaf_session, start_time_str, label, for_running_query_kernel };
         self.o_prot_mut().write_message_begin(&message_ident)?;
         call_args.write_to_out_protocol(self.o_prot_mut())?;
         self.o_prot_mut().write_message_end()?;
@@ -8097,12 +8405,12 @@ impl <C: TThriftClient + TOmniSciSyncClientMarker> TOmniSciSyncClient for C {
       result.ok_or()
     }
   }
-  fn invalidate_cur_session(&mut self, parent_session: TSessionId, leaf_session: TSessionId, start_time_str: String, label: String) -> thrift::Result<()> {
+  fn invalidate_cur_session(&mut self, parent_session: TSessionId, leaf_session: TSessionId, start_time_str: String, label: String, for_running_query_kernel: bool) -> thrift::Result<()> {
     (
       {
         self.increment_sequence_number();
         let message_ident = TMessageIdentifier::new("invalidate_cur_session", TMessageType::Call, self.sequence_number());
-        let call_args = OmniSciInvalidateCurSessionArgs { parent_session, leaf_session, start_time_str, label };
+        let call_args = OmniSciInvalidateCurSessionArgs { parent_session, leaf_session, start_time_str, label, for_running_query_kernel };
         self.o_prot_mut().write_message_begin(&message_ident)?;
         call_args.write_to_out_protocol(self.o_prot_mut())?;
         self.o_prot_mut().write_message_end()?;
@@ -8579,6 +8887,114 @@ impl <C: TThriftClient + TOmniSciSyncClientMarker> TOmniSciSyncClient for C {
       }
       verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
       let result = OmniSciGetResultRowForPixelResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn create_custom_expression(&mut self, session: TSessionId, custom_expression: TCustomExpression) -> thrift::Result<i32> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("create_custom_expression", TMessageType::Call, self.sequence_number());
+        let call_args = OmniSciCreateCustomExpressionArgs { session, custom_expression };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("create_custom_expression", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = OmniSciCreateCustomExpressionResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn get_custom_expressions(&mut self, session: TSessionId) -> thrift::Result<Vec<TCustomExpression>> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("get_custom_expressions", TMessageType::Call, self.sequence_number());
+        let call_args = OmniSciGetCustomExpressionsArgs { session };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("get_custom_expressions", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = OmniSciGetCustomExpressionsResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn update_custom_expression(&mut self, session: TSessionId, id: i32, expression_json: String) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("update_custom_expression", TMessageType::Call, self.sequence_number());
+        let call_args = OmniSciUpdateCustomExpressionArgs { session, id, expression_json };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("update_custom_expression", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = OmniSciUpdateCustomExpressionResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn delete_custom_expressions(&mut self, session: TSessionId, custom_expression_ids: Vec<i32>, do_soft_delete: bool) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("delete_custom_expressions", TMessageType::Call, self.sequence_number());
+        let call_args = OmniSciDeleteCustomExpressionsArgs { session, custom_expression_ids, do_soft_delete };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("delete_custom_expressions", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = OmniSciDeleteCustomExpressionsResult::read_from_in_protocol(self.i_prot_mut())?;
       self.i_prot_mut().read_message_end()?;
       result.ok_or()
     }
@@ -9814,11 +10230,14 @@ pub trait OmniSciSyncHandler {
   fn handle_get_status(&self, session: TSessionId) -> thrift::Result<Vec<TServerStatus>>;
   fn handle_get_hardware_info(&self, session: TSessionId) -> thrift::Result<TClusterHardwareInfo>;
   fn handle_get_tables(&self, session: TSessionId) -> thrift::Result<Vec<String>>;
+  fn handle_get_tables_for_database(&self, session: TSessionId, database_name: String) -> thrift::Result<Vec<String>>;
   fn handle_get_physical_tables(&self, session: TSessionId) -> thrift::Result<Vec<String>>;
   fn handle_get_views(&self, session: TSessionId) -> thrift::Result<Vec<String>>;
   fn handle_get_tables_meta(&self, session: TSessionId) -> thrift::Result<Vec<TTableMeta>>;
   fn handle_get_table_details(&self, session: TSessionId, table_name: String) -> thrift::Result<TTableDetails>;
+  fn handle_get_table_details_for_database(&self, session: TSessionId, table_name: String, database_name: String) -> thrift::Result<TTableDetails>;
   fn handle_get_internal_table_details(&self, session: TSessionId, table_name: String) -> thrift::Result<TTableDetails>;
+  fn handle_get_internal_table_details_for_database(&self, session: TSessionId, table_name: String, database_name: String) -> thrift::Result<TTableDetails>;
   fn handle_get_users(&self, session: TSessionId) -> thrift::Result<Vec<String>>;
   fn handle_get_databases(&self, session: TSessionId) -> thrift::Result<Vec<TDBInfo>>;
   fn handle_get_version(&self) -> thrift::Result<String>;
@@ -9828,8 +10247,8 @@ pub trait OmniSciSyncHandler {
   fn handle_get_memory(&self, session: TSessionId, memory_level: String) -> thrift::Result<Vec<TNodeMemoryInfo>>;
   fn handle_clear_cpu_memory(&self, session: TSessionId) -> thrift::Result<()>;
   fn handle_clear_gpu_memory(&self, session: TSessionId) -> thrift::Result<()>;
-  fn handle_set_cur_session(&self, parent_session: TSessionId, leaf_session: TSessionId, start_time_str: String, label: String) -> thrift::Result<()>;
-  fn handle_invalidate_cur_session(&self, parent_session: TSessionId, leaf_session: TSessionId, start_time_str: String, label: String) -> thrift::Result<()>;
+  fn handle_set_cur_session(&self, parent_session: TSessionId, leaf_session: TSessionId, start_time_str: String, label: String, for_running_query_kernel: bool) -> thrift::Result<()>;
+  fn handle_invalidate_cur_session(&self, parent_session: TSessionId, leaf_session: TSessionId, start_time_str: String, label: String, for_running_query_kernel: bool) -> thrift::Result<()>;
   fn handle_set_table_epoch(&self, session: TSessionId, db_id: i32, table_id: i32, new_epoch: i32) -> thrift::Result<()>;
   fn handle_set_table_epoch_by_name(&self, session: TSessionId, table_name: String, new_epoch: i32) -> thrift::Result<()>;
   fn handle_get_table_epoch(&self, session: TSessionId, db_id: i32, table_id: i32) -> thrift::Result<i32>;
@@ -9847,6 +10266,10 @@ pub trait OmniSciSyncHandler {
   fn handle_set_execution_mode(&self, session: TSessionId, mode: TExecuteMode) -> thrift::Result<()>;
   fn handle_render_vega(&self, session: TSessionId, widget_id: i64, vega_json: String, compression_level: i32, nonce: String) -> thrift::Result<TRenderResult>;
   fn handle_get_result_row_for_pixel(&self, session: TSessionId, widget_id: i64, pixel: TPixel, table_col_names: BTreeMap<String, Vec<String>>, column_format: bool, pixel_radius: i32, nonce: String) -> thrift::Result<TPixelTableRowResult>;
+  fn handle_create_custom_expression(&self, session: TSessionId, custom_expression: TCustomExpression) -> thrift::Result<i32>;
+  fn handle_get_custom_expressions(&self, session: TSessionId) -> thrift::Result<Vec<TCustomExpression>>;
+  fn handle_update_custom_expression(&self, session: TSessionId, id: i32, expression_json: String) -> thrift::Result<()>;
+  fn handle_delete_custom_expressions(&self, session: TSessionId, custom_expression_ids: Vec<i32>, do_soft_delete: bool) -> thrift::Result<()>;
   fn handle_get_dashboard(&self, session: TSessionId, dashboard_id: i32) -> thrift::Result<TDashboard>;
   fn handle_get_dashboards(&self, session: TSessionId) -> thrift::Result<Vec<TDashboard>>;
   fn handle_create_dashboard(&self, session: TSessionId, dashboard_name: String, dashboard_state: String, image_hash: String, dashboard_metadata: String) -> thrift::Result<i32>;
@@ -9931,6 +10354,9 @@ impl <H: OmniSciSyncHandler> OmniSciSyncProcessor<H> {
   fn process_get_tables(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TOmniSciProcessFunctions::process_get_tables(&self.handler, incoming_sequence_number, i_prot, o_prot)
   }
+  fn process_get_tables_for_database(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TOmniSciProcessFunctions::process_get_tables_for_database(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
   fn process_get_physical_tables(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TOmniSciProcessFunctions::process_get_physical_tables(&self.handler, incoming_sequence_number, i_prot, o_prot)
   }
@@ -9943,8 +10369,14 @@ impl <H: OmniSciSyncHandler> OmniSciSyncProcessor<H> {
   fn process_get_table_details(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TOmniSciProcessFunctions::process_get_table_details(&self.handler, incoming_sequence_number, i_prot, o_prot)
   }
+  fn process_get_table_details_for_database(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TOmniSciProcessFunctions::process_get_table_details_for_database(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
   fn process_get_internal_table_details(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TOmniSciProcessFunctions::process_get_internal_table_details(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_get_internal_table_details_for_database(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TOmniSciProcessFunctions::process_get_internal_table_details_for_database(&self.handler, incoming_sequence_number, i_prot, o_prot)
   }
   fn process_get_users(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TOmniSciProcessFunctions::process_get_users(&self.handler, incoming_sequence_number, i_prot, o_prot)
@@ -10029,6 +10461,18 @@ impl <H: OmniSciSyncHandler> OmniSciSyncProcessor<H> {
   }
   fn process_get_result_row_for_pixel(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TOmniSciProcessFunctions::process_get_result_row_for_pixel(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_create_custom_expression(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TOmniSciProcessFunctions::process_create_custom_expression(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_get_custom_expressions(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TOmniSciProcessFunctions::process_get_custom_expressions(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_update_custom_expression(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TOmniSciProcessFunctions::process_update_custom_expression(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_delete_custom_expressions(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TOmniSciProcessFunctions::process_delete_custom_expressions(&self.handler, incoming_sequence_number, i_prot, o_prot)
   }
   fn process_get_dashboard(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TOmniSciProcessFunctions::process_get_dashboard(&self.handler, incoming_sequence_number, i_prot, o_prot)
@@ -10710,6 +11154,66 @@ impl TOmniSciProcessFunctions {
       },
     }
   }
+  pub fn process_get_tables_for_database<H: OmniSciSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = OmniSciGetTablesForDatabaseArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_get_tables_for_database(args.session, args.database_name) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("get_tables_for_database", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = OmniSciGetTablesForDatabaseResult { result_value: Some(handler_return), e: None };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::User(usr_err) => {
+            if usr_err.downcast_ref::<TOmniSciException>().is_some() {
+              let err = usr_err.downcast::<TOmniSciException>().expect("downcast already checked");
+              let ret_err = OmniSciGetTablesForDatabaseResult{ result_value: None, e: Some(*err) };
+              let message_ident = TMessageIdentifier::new("get_tables_for_database", TMessageType::Reply, incoming_sequence_number);
+              o_prot.write_message_begin(&message_ident)?;
+              ret_err.write_to_out_protocol(o_prot)?;
+              o_prot.write_message_end()?;
+              o_prot.flush()
+            } else {
+              let ret_err = {
+                ApplicationError::new(
+                  ApplicationErrorKind::Unknown,
+                  usr_err.description()
+                )
+              };
+              let message_ident = TMessageIdentifier::new("get_tables_for_database", TMessageType::Exception, incoming_sequence_number);
+              o_prot.write_message_begin(&message_ident)?;
+              thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+              o_prot.write_message_end()?;
+              o_prot.flush()
+            }
+          },
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("get_tables_for_database", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.description()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("get_tables_for_database", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
   pub fn process_get_physical_tables<H: OmniSciSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let args = OmniSciGetPhysicalTablesArgs::read_from_in_protocol(i_prot)?;
     match handler.handle_get_physical_tables(args.session) {
@@ -10950,6 +11454,66 @@ impl TOmniSciProcessFunctions {
       },
     }
   }
+  pub fn process_get_table_details_for_database<H: OmniSciSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = OmniSciGetTableDetailsForDatabaseArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_get_table_details_for_database(args.session, args.table_name, args.database_name) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("get_table_details_for_database", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = OmniSciGetTableDetailsForDatabaseResult { result_value: Some(handler_return), e: None };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::User(usr_err) => {
+            if usr_err.downcast_ref::<TOmniSciException>().is_some() {
+              let err = usr_err.downcast::<TOmniSciException>().expect("downcast already checked");
+              let ret_err = OmniSciGetTableDetailsForDatabaseResult{ result_value: None, e: Some(*err) };
+              let message_ident = TMessageIdentifier::new("get_table_details_for_database", TMessageType::Reply, incoming_sequence_number);
+              o_prot.write_message_begin(&message_ident)?;
+              ret_err.write_to_out_protocol(o_prot)?;
+              o_prot.write_message_end()?;
+              o_prot.flush()
+            } else {
+              let ret_err = {
+                ApplicationError::new(
+                  ApplicationErrorKind::Unknown,
+                  usr_err.description()
+                )
+              };
+              let message_ident = TMessageIdentifier::new("get_table_details_for_database", TMessageType::Exception, incoming_sequence_number);
+              o_prot.write_message_begin(&message_ident)?;
+              thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+              o_prot.write_message_end()?;
+              o_prot.flush()
+            }
+          },
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("get_table_details_for_database", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.description()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("get_table_details_for_database", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
   pub fn process_get_internal_table_details<H: OmniSciSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let args = OmniSciGetInternalTableDetailsArgs::read_from_in_protocol(i_prot)?;
     match handler.handle_get_internal_table_details(args.session, args.table_name) {
@@ -11001,6 +11565,66 @@ impl TOmniSciProcessFunctions {
               )
             };
             let message_ident = TMessageIdentifier::new("get_internal_table_details", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_get_internal_table_details_for_database<H: OmniSciSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = OmniSciGetInternalTableDetailsForDatabaseArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_get_internal_table_details_for_database(args.session, args.table_name, args.database_name) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("get_internal_table_details_for_database", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = OmniSciGetInternalTableDetailsForDatabaseResult { result_value: Some(handler_return), e: None };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::User(usr_err) => {
+            if usr_err.downcast_ref::<TOmniSciException>().is_some() {
+              let err = usr_err.downcast::<TOmniSciException>().expect("downcast already checked");
+              let ret_err = OmniSciGetInternalTableDetailsForDatabaseResult{ result_value: None, e: Some(*err) };
+              let message_ident = TMessageIdentifier::new("get_internal_table_details_for_database", TMessageType::Reply, incoming_sequence_number);
+              o_prot.write_message_begin(&message_ident)?;
+              ret_err.write_to_out_protocol(o_prot)?;
+              o_prot.write_message_end()?;
+              o_prot.flush()
+            } else {
+              let ret_err = {
+                ApplicationError::new(
+                  ApplicationErrorKind::Unknown,
+                  usr_err.description()
+                )
+              };
+              let message_ident = TMessageIdentifier::new("get_internal_table_details_for_database", TMessageType::Exception, incoming_sequence_number);
+              o_prot.write_message_begin(&message_ident)?;
+              thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+              o_prot.write_message_end()?;
+              o_prot.flush()
+            }
+          },
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("get_internal_table_details_for_database", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.description()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("get_internal_table_details_for_database", TMessageType::Exception, incoming_sequence_number);
             o_prot.write_message_begin(&message_ident)?;
             thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
             o_prot.write_message_end()?;
@@ -11552,7 +12176,7 @@ impl TOmniSciProcessFunctions {
   }
   pub fn process_set_cur_session<H: OmniSciSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let args = OmniSciSetCurSessionArgs::read_from_in_protocol(i_prot)?;
-    match handler.handle_set_cur_session(args.parent_session, args.leaf_session, args.start_time_str, args.label) {
+    match handler.handle_set_cur_session(args.parent_session, args.leaf_session, args.start_time_str, args.label, args.for_running_query_kernel) {
       Ok(_) => {
         let message_ident = TMessageIdentifier::new("set_cur_session", TMessageType::Reply, incoming_sequence_number);
         o_prot.write_message_begin(&message_ident)?;
@@ -11612,7 +12236,7 @@ impl TOmniSciProcessFunctions {
   }
   pub fn process_invalidate_cur_session<H: OmniSciSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let args = OmniSciInvalidateCurSessionArgs::read_from_in_protocol(i_prot)?;
-    match handler.handle_invalidate_cur_session(args.parent_session, args.leaf_session, args.start_time_str, args.label) {
+    match handler.handle_invalidate_cur_session(args.parent_session, args.leaf_session, args.start_time_str, args.label, args.for_running_query_kernel) {
       Ok(_) => {
         let message_ident = TMessageIdentifier::new("invalidate_cur_session", TMessageType::Reply, incoming_sequence_number);
         o_prot.write_message_begin(&message_ident)?;
@@ -12589,6 +13213,246 @@ impl TOmniSciProcessFunctions {
               )
             };
             let message_ident = TMessageIdentifier::new("get_result_row_for_pixel", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_create_custom_expression<H: OmniSciSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = OmniSciCreateCustomExpressionArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_create_custom_expression(args.session, args.custom_expression) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("create_custom_expression", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = OmniSciCreateCustomExpressionResult { result_value: Some(handler_return), e: None };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::User(usr_err) => {
+            if usr_err.downcast_ref::<TOmniSciException>().is_some() {
+              let err = usr_err.downcast::<TOmniSciException>().expect("downcast already checked");
+              let ret_err = OmniSciCreateCustomExpressionResult{ result_value: None, e: Some(*err) };
+              let message_ident = TMessageIdentifier::new("create_custom_expression", TMessageType::Reply, incoming_sequence_number);
+              o_prot.write_message_begin(&message_ident)?;
+              ret_err.write_to_out_protocol(o_prot)?;
+              o_prot.write_message_end()?;
+              o_prot.flush()
+            } else {
+              let ret_err = {
+                ApplicationError::new(
+                  ApplicationErrorKind::Unknown,
+                  usr_err.description()
+                )
+              };
+              let message_ident = TMessageIdentifier::new("create_custom_expression", TMessageType::Exception, incoming_sequence_number);
+              o_prot.write_message_begin(&message_ident)?;
+              thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+              o_prot.write_message_end()?;
+              o_prot.flush()
+            }
+          },
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("create_custom_expression", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.description()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("create_custom_expression", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_get_custom_expressions<H: OmniSciSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = OmniSciGetCustomExpressionsArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_get_custom_expressions(args.session) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("get_custom_expressions", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = OmniSciGetCustomExpressionsResult { result_value: Some(handler_return), e: None };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::User(usr_err) => {
+            if usr_err.downcast_ref::<TOmniSciException>().is_some() {
+              let err = usr_err.downcast::<TOmniSciException>().expect("downcast already checked");
+              let ret_err = OmniSciGetCustomExpressionsResult{ result_value: None, e: Some(*err) };
+              let message_ident = TMessageIdentifier::new("get_custom_expressions", TMessageType::Reply, incoming_sequence_number);
+              o_prot.write_message_begin(&message_ident)?;
+              ret_err.write_to_out_protocol(o_prot)?;
+              o_prot.write_message_end()?;
+              o_prot.flush()
+            } else {
+              let ret_err = {
+                ApplicationError::new(
+                  ApplicationErrorKind::Unknown,
+                  usr_err.description()
+                )
+              };
+              let message_ident = TMessageIdentifier::new("get_custom_expressions", TMessageType::Exception, incoming_sequence_number);
+              o_prot.write_message_begin(&message_ident)?;
+              thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+              o_prot.write_message_end()?;
+              o_prot.flush()
+            }
+          },
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("get_custom_expressions", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.description()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("get_custom_expressions", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_update_custom_expression<H: OmniSciSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = OmniSciUpdateCustomExpressionArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_update_custom_expression(args.session, args.id, args.expression_json) {
+      Ok(_) => {
+        let message_ident = TMessageIdentifier::new("update_custom_expression", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = OmniSciUpdateCustomExpressionResult { e: None };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::User(usr_err) => {
+            if usr_err.downcast_ref::<TOmniSciException>().is_some() {
+              let err = usr_err.downcast::<TOmniSciException>().expect("downcast already checked");
+              let ret_err = OmniSciUpdateCustomExpressionResult{ e: Some(*err) };
+              let message_ident = TMessageIdentifier::new("update_custom_expression", TMessageType::Reply, incoming_sequence_number);
+              o_prot.write_message_begin(&message_ident)?;
+              ret_err.write_to_out_protocol(o_prot)?;
+              o_prot.write_message_end()?;
+              o_prot.flush()
+            } else {
+              let ret_err = {
+                ApplicationError::new(
+                  ApplicationErrorKind::Unknown,
+                  usr_err.description()
+                )
+              };
+              let message_ident = TMessageIdentifier::new("update_custom_expression", TMessageType::Exception, incoming_sequence_number);
+              o_prot.write_message_begin(&message_ident)?;
+              thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+              o_prot.write_message_end()?;
+              o_prot.flush()
+            }
+          },
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("update_custom_expression", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.description()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("update_custom_expression", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_delete_custom_expressions<H: OmniSciSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = OmniSciDeleteCustomExpressionsArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_delete_custom_expressions(args.session, args.custom_expression_ids, args.do_soft_delete) {
+      Ok(_) => {
+        let message_ident = TMessageIdentifier::new("delete_custom_expressions", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = OmniSciDeleteCustomExpressionsResult { e: None };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::User(usr_err) => {
+            if usr_err.downcast_ref::<TOmniSciException>().is_some() {
+              let err = usr_err.downcast::<TOmniSciException>().expect("downcast already checked");
+              let ret_err = OmniSciDeleteCustomExpressionsResult{ e: Some(*err) };
+              let message_ident = TMessageIdentifier::new("delete_custom_expressions", TMessageType::Reply, incoming_sequence_number);
+              o_prot.write_message_begin(&message_ident)?;
+              ret_err.write_to_out_protocol(o_prot)?;
+              o_prot.write_message_end()?;
+              o_prot.flush()
+            } else {
+              let ret_err = {
+                ApplicationError::new(
+                  ApplicationErrorKind::Unknown,
+                  usr_err.description()
+                )
+              };
+              let message_ident = TMessageIdentifier::new("delete_custom_expressions", TMessageType::Exception, incoming_sequence_number);
+              o_prot.write_message_begin(&message_ident)?;
+              thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+              o_prot.write_message_end()?;
+              o_prot.flush()
+            }
+          },
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("delete_custom_expressions", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.description()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("delete_custom_expressions", TMessageType::Exception, incoming_sequence_number);
             o_prot.write_message_begin(&message_ident)?;
             thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
             o_prot.write_message_end()?;
@@ -15331,6 +16195,9 @@ impl <H: OmniSciSyncHandler> TProcessor for OmniSciSyncProcessor<H> {
       "get_tables" => {
         self.process_get_tables(message_ident.sequence_number, i_prot, o_prot)
       },
+      "get_tables_for_database" => {
+        self.process_get_tables_for_database(message_ident.sequence_number, i_prot, o_prot)
+      },
       "get_physical_tables" => {
         self.process_get_physical_tables(message_ident.sequence_number, i_prot, o_prot)
       },
@@ -15343,8 +16210,14 @@ impl <H: OmniSciSyncHandler> TProcessor for OmniSciSyncProcessor<H> {
       "get_table_details" => {
         self.process_get_table_details(message_ident.sequence_number, i_prot, o_prot)
       },
+      "get_table_details_for_database" => {
+        self.process_get_table_details_for_database(message_ident.sequence_number, i_prot, o_prot)
+      },
       "get_internal_table_details" => {
         self.process_get_internal_table_details(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "get_internal_table_details_for_database" => {
+        self.process_get_internal_table_details_for_database(message_ident.sequence_number, i_prot, o_prot)
       },
       "get_users" => {
         self.process_get_users(message_ident.sequence_number, i_prot, o_prot)
@@ -15429,6 +16302,18 @@ impl <H: OmniSciSyncHandler> TProcessor for OmniSciSyncProcessor<H> {
       },
       "get_result_row_for_pixel" => {
         self.process_get_result_row_for_pixel(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "create_custom_expression" => {
+        self.process_create_custom_expression(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "get_custom_expressions" => {
+        self.process_get_custom_expressions(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "update_custom_expression" => {
+        self.process_update_custom_expression(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "delete_custom_expressions" => {
+        self.process_delete_custom_expressions(message_ident.sequence_number, i_prot, o_prot)
       },
       "get_dashboard" => {
         self.process_get_dashboard(message_ident.sequence_number, i_prot, o_prot)
@@ -16728,6 +17613,152 @@ impl OmniSciGetTablesResult {
 }
 
 //
+// OmniSciGetTablesForDatabaseArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct OmniSciGetTablesForDatabaseArgs {
+  session: TSessionId,
+  database_name: String,
+}
+
+impl OmniSciGetTablesForDatabaseArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<OmniSciGetTablesForDatabaseArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<TSessionId> = None;
+    let mut f_2: Option<String> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_string()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_string()?;
+          f_2 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("OmniSciGetTablesForDatabaseArgs.session", &f_1)?;
+    verify_required_field_exists("OmniSciGetTablesForDatabaseArgs.database_name", &f_2)?;
+    let ret = OmniSciGetTablesForDatabaseArgs {
+      session: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      database_name: f_2.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("get_tables_for_database_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("session", TType::String, 1))?;
+    o_prot.write_string(&self.session)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("database_name", TType::String, 2))?;
+    o_prot.write_string(&self.database_name)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// OmniSciGetTablesForDatabaseResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct OmniSciGetTablesForDatabaseResult {
+  result_value: Option<Vec<String>>,
+  e: Option<TOmniSciException>,
+}
+
+impl OmniSciGetTablesForDatabaseResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<OmniSciGetTablesForDatabaseResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<Vec<String>> = None;
+    let mut f_1: Option<TOmniSciException> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let list_ident = i_prot.read_list_begin()?;
+          let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
+          for _ in 0..list_ident.size {
+            let list_elem_43 = i_prot.read_string()?;
+            val.push(list_elem_43);
+          }
+          i_prot.read_list_end()?;
+          f_0 = Some(val);
+        },
+        1 => {
+          let val = TOmniSciException::read_from_in_protocol(i_prot)?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = OmniSciGetTablesForDatabaseResult {
+      result_value: f_0,
+      e: f_1,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("OmniSciGetTablesForDatabaseResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::List, 0))?;
+      o_prot.write_list_begin(&TListIdentifier::new(TType::String, fld_var.len() as i32))?;
+      for e in fld_var {
+        o_prot.write_string(e)?;
+        o_prot.write_list_end()?;
+      }
+      o_prot.write_field_end()?
+    }
+    if let Some(ref fld_var) = self.e {
+      o_prot.write_field_begin(&TFieldIdentifier::new("e", TType::Struct, 1))?;
+      fld_var.write_to_out_protocol(o_prot)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<Vec<String>> {
+    if self.e.is_some() {
+      Err(thrift::Error::User(Box::new(self.e.unwrap())))
+    } else if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for OmniSciGetTablesForDatabase"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
 // OmniSciGetPhysicalTablesArgs
 //
 
@@ -16801,8 +17832,8 @@ impl OmniSciGetPhysicalTablesResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_43 = i_prot.read_string()?;
-            val.push(list_elem_43);
+            let list_elem_44 = i_prot.read_string()?;
+            val.push(list_elem_44);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -16936,8 +17967,8 @@ impl OmniSciGetViewsResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_44 = i_prot.read_string()?;
-            val.push(list_elem_44);
+            let list_elem_45 = i_prot.read_string()?;
+            val.push(list_elem_45);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -17071,8 +18102,8 @@ impl OmniSciGetTablesMetaResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TTableMeta> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_45 = TTableMeta::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_45);
+            let list_elem_46 = TTableMeta::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_46);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -17269,6 +18300,153 @@ impl OmniSciGetTableDetailsResult {
 }
 
 //
+// OmniSciGetTableDetailsForDatabaseArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct OmniSciGetTableDetailsForDatabaseArgs {
+  session: TSessionId,
+  table_name: String,
+  database_name: String,
+}
+
+impl OmniSciGetTableDetailsForDatabaseArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<OmniSciGetTableDetailsForDatabaseArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<TSessionId> = None;
+    let mut f_2: Option<String> = None;
+    let mut f_3: Option<String> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_string()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_string()?;
+          f_2 = Some(val);
+        },
+        3 => {
+          let val = i_prot.read_string()?;
+          f_3 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("OmniSciGetTableDetailsForDatabaseArgs.session", &f_1)?;
+    verify_required_field_exists("OmniSciGetTableDetailsForDatabaseArgs.table_name", &f_2)?;
+    verify_required_field_exists("OmniSciGetTableDetailsForDatabaseArgs.database_name", &f_3)?;
+    let ret = OmniSciGetTableDetailsForDatabaseArgs {
+      session: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      table_name: f_2.expect("auto-generated code should have checked for presence of required fields"),
+      database_name: f_3.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("get_table_details_for_database_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("session", TType::String, 1))?;
+    o_prot.write_string(&self.session)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("table_name", TType::String, 2))?;
+    o_prot.write_string(&self.table_name)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("database_name", TType::String, 3))?;
+    o_prot.write_string(&self.database_name)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// OmniSciGetTableDetailsForDatabaseResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct OmniSciGetTableDetailsForDatabaseResult {
+  result_value: Option<TTableDetails>,
+  e: Option<TOmniSciException>,
+}
+
+impl OmniSciGetTableDetailsForDatabaseResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<OmniSciGetTableDetailsForDatabaseResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<TTableDetails> = None;
+    let mut f_1: Option<TOmniSciException> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = TTableDetails::read_from_in_protocol(i_prot)?;
+          f_0 = Some(val);
+        },
+        1 => {
+          let val = TOmniSciException::read_from_in_protocol(i_prot)?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = OmniSciGetTableDetailsForDatabaseResult {
+      result_value: f_0,
+      e: f_1,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("OmniSciGetTableDetailsForDatabaseResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::Struct, 0))?;
+      fld_var.write_to_out_protocol(o_prot)?;
+      o_prot.write_field_end()?
+    }
+    if let Some(ref fld_var) = self.e {
+      o_prot.write_field_begin(&TFieldIdentifier::new("e", TType::Struct, 1))?;
+      fld_var.write_to_out_protocol(o_prot)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<TTableDetails> {
+    if self.e.is_some() {
+      Err(thrift::Error::User(Box::new(self.e.unwrap())))
+    } else if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for OmniSciGetTableDetailsForDatabase"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
 // OmniSciGetInternalTableDetailsArgs
 //
 
@@ -17405,6 +18583,153 @@ impl OmniSciGetInternalTableDetailsResult {
 }
 
 //
+// OmniSciGetInternalTableDetailsForDatabaseArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct OmniSciGetInternalTableDetailsForDatabaseArgs {
+  session: TSessionId,
+  table_name: String,
+  database_name: String,
+}
+
+impl OmniSciGetInternalTableDetailsForDatabaseArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<OmniSciGetInternalTableDetailsForDatabaseArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<TSessionId> = None;
+    let mut f_2: Option<String> = None;
+    let mut f_3: Option<String> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_string()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_string()?;
+          f_2 = Some(val);
+        },
+        3 => {
+          let val = i_prot.read_string()?;
+          f_3 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("OmniSciGetInternalTableDetailsForDatabaseArgs.session", &f_1)?;
+    verify_required_field_exists("OmniSciGetInternalTableDetailsForDatabaseArgs.table_name", &f_2)?;
+    verify_required_field_exists("OmniSciGetInternalTableDetailsForDatabaseArgs.database_name", &f_3)?;
+    let ret = OmniSciGetInternalTableDetailsForDatabaseArgs {
+      session: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      table_name: f_2.expect("auto-generated code should have checked for presence of required fields"),
+      database_name: f_3.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("get_internal_table_details_for_database_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("session", TType::String, 1))?;
+    o_prot.write_string(&self.session)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("table_name", TType::String, 2))?;
+    o_prot.write_string(&self.table_name)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("database_name", TType::String, 3))?;
+    o_prot.write_string(&self.database_name)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// OmniSciGetInternalTableDetailsForDatabaseResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct OmniSciGetInternalTableDetailsForDatabaseResult {
+  result_value: Option<TTableDetails>,
+  e: Option<TOmniSciException>,
+}
+
+impl OmniSciGetInternalTableDetailsForDatabaseResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<OmniSciGetInternalTableDetailsForDatabaseResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<TTableDetails> = None;
+    let mut f_1: Option<TOmniSciException> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = TTableDetails::read_from_in_protocol(i_prot)?;
+          f_0 = Some(val);
+        },
+        1 => {
+          let val = TOmniSciException::read_from_in_protocol(i_prot)?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = OmniSciGetInternalTableDetailsForDatabaseResult {
+      result_value: f_0,
+      e: f_1,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("OmniSciGetInternalTableDetailsForDatabaseResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::Struct, 0))?;
+      fld_var.write_to_out_protocol(o_prot)?;
+      o_prot.write_field_end()?
+    }
+    if let Some(ref fld_var) = self.e {
+      o_prot.write_field_begin(&TFieldIdentifier::new("e", TType::Struct, 1))?;
+      fld_var.write_to_out_protocol(o_prot)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<TTableDetails> {
+    if self.e.is_some() {
+      Err(thrift::Error::User(Box::new(self.e.unwrap())))
+    } else if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for OmniSciGetInternalTableDetailsForDatabase"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
 // OmniSciGetUsersArgs
 //
 
@@ -17478,8 +18803,8 @@ impl OmniSciGetUsersResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_46 = i_prot.read_string()?;
-            val.push(list_elem_46);
+            let list_elem_47 = i_prot.read_string()?;
+            val.push(list_elem_47);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -17613,8 +18938,8 @@ impl OmniSciGetDatabasesResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TDBInfo> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_47 = TDBInfo::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_47);
+            let list_elem_48 = TDBInfo::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_48);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -18205,8 +19530,8 @@ impl OmniSciGetMemoryResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TNodeMemoryInfo> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_48 = TNodeMemoryInfo::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_48);
+            let list_elem_49 = TNodeMemoryInfo::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_49);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -18484,6 +19809,7 @@ struct OmniSciSetCurSessionArgs {
   leaf_session: TSessionId,
   start_time_str: String,
   label: String,
+  for_running_query_kernel: bool,
 }
 
 impl OmniSciSetCurSessionArgs {
@@ -18493,6 +19819,7 @@ impl OmniSciSetCurSessionArgs {
     let mut f_2: Option<TSessionId> = None;
     let mut f_3: Option<String> = None;
     let mut f_4: Option<String> = None;
+    let mut f_5: Option<bool> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -18516,6 +19843,10 @@ impl OmniSciSetCurSessionArgs {
           let val = i_prot.read_string()?;
           f_4 = Some(val);
         },
+        5 => {
+          let val = i_prot.read_bool()?;
+          f_5 = Some(val);
+        },
         _ => {
           i_prot.skip(field_ident.field_type)?;
         },
@@ -18527,11 +19858,13 @@ impl OmniSciSetCurSessionArgs {
     verify_required_field_exists("OmniSciSetCurSessionArgs.leaf_session", &f_2)?;
     verify_required_field_exists("OmniSciSetCurSessionArgs.start_time_str", &f_3)?;
     verify_required_field_exists("OmniSciSetCurSessionArgs.label", &f_4)?;
+    verify_required_field_exists("OmniSciSetCurSessionArgs.for_running_query_kernel", &f_5)?;
     let ret = OmniSciSetCurSessionArgs {
       parent_session: f_1.expect("auto-generated code should have checked for presence of required fields"),
       leaf_session: f_2.expect("auto-generated code should have checked for presence of required fields"),
       start_time_str: f_3.expect("auto-generated code should have checked for presence of required fields"),
       label: f_4.expect("auto-generated code should have checked for presence of required fields"),
+      for_running_query_kernel: f_5.expect("auto-generated code should have checked for presence of required fields"),
     };
     Ok(ret)
   }
@@ -18549,6 +19882,9 @@ impl OmniSciSetCurSessionArgs {
     o_prot.write_field_end()?;
     o_prot.write_field_begin(&TFieldIdentifier::new("label", TType::String, 4))?;
     o_prot.write_string(&self.label)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("for_running_query_kernel", TType::Bool, 5))?;
+    o_prot.write_bool(self.for_running_query_kernel)?;
     o_prot.write_field_end()?;
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
@@ -18621,6 +19957,7 @@ struct OmniSciInvalidateCurSessionArgs {
   leaf_session: TSessionId,
   start_time_str: String,
   label: String,
+  for_running_query_kernel: bool,
 }
 
 impl OmniSciInvalidateCurSessionArgs {
@@ -18630,6 +19967,7 @@ impl OmniSciInvalidateCurSessionArgs {
     let mut f_2: Option<TSessionId> = None;
     let mut f_3: Option<String> = None;
     let mut f_4: Option<String> = None;
+    let mut f_5: Option<bool> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -18653,6 +19991,10 @@ impl OmniSciInvalidateCurSessionArgs {
           let val = i_prot.read_string()?;
           f_4 = Some(val);
         },
+        5 => {
+          let val = i_prot.read_bool()?;
+          f_5 = Some(val);
+        },
         _ => {
           i_prot.skip(field_ident.field_type)?;
         },
@@ -18664,11 +20006,13 @@ impl OmniSciInvalidateCurSessionArgs {
     verify_required_field_exists("OmniSciInvalidateCurSessionArgs.leaf_session", &f_2)?;
     verify_required_field_exists("OmniSciInvalidateCurSessionArgs.start_time_str", &f_3)?;
     verify_required_field_exists("OmniSciInvalidateCurSessionArgs.label", &f_4)?;
+    verify_required_field_exists("OmniSciInvalidateCurSessionArgs.for_running_query_kernel", &f_5)?;
     let ret = OmniSciInvalidateCurSessionArgs {
       parent_session: f_1.expect("auto-generated code should have checked for presence of required fields"),
       leaf_session: f_2.expect("auto-generated code should have checked for presence of required fields"),
       start_time_str: f_3.expect("auto-generated code should have checked for presence of required fields"),
       label: f_4.expect("auto-generated code should have checked for presence of required fields"),
+      for_running_query_kernel: f_5.expect("auto-generated code should have checked for presence of required fields"),
     };
     Ok(ret)
   }
@@ -18686,6 +20030,9 @@ impl OmniSciInvalidateCurSessionArgs {
     o_prot.write_field_end()?;
     o_prot.write_field_begin(&TFieldIdentifier::new("label", TType::String, 4))?;
     o_prot.write_string(&self.label)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("for_running_query_kernel", TType::Bool, 5))?;
+    o_prot.write_bool(self.for_running_query_kernel)?;
     o_prot.write_field_end()?;
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
@@ -19360,8 +20707,8 @@ impl OmniSciGetTableEpochsResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TTableEpochInfo> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_49 = TTableEpochInfo::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_49);
+            let list_elem_50 = TTableEpochInfo::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_50);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -19445,8 +20792,8 @@ impl OmniSciSetTableEpochsArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TTableEpochInfo> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_50 = TTableEpochInfo::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_50);
+            let list_elem_51 = TTableEpochInfo::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_51);
           }
           i_prot.read_list_end()?;
           f_3 = Some(val);
@@ -20508,8 +21855,8 @@ impl OmniSciSqlValidateResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TColumnType> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_51 = TColumnType::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_51);
+            let list_elem_52 = TColumnType::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_52);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -20665,8 +22012,8 @@ impl OmniSciGetCompletionHintsResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<completion_hints::TCompletionHint> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_52 = completion_hints::TCompletionHint::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_52);
+            let list_elem_53 = completion_hints::TCompletionHint::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_53);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -21058,15 +22405,15 @@ impl OmniSciGetResultRowForPixelArgs {
           let map_ident = i_prot.read_map_begin()?;
           let mut val: BTreeMap<String, Vec<String>> = BTreeMap::new();
           for _ in 0..map_ident.size {
-            let map_key_53 = i_prot.read_string()?;
+            let map_key_54 = i_prot.read_string()?;
             let list_ident = i_prot.read_list_begin()?;
-            let mut map_val_54: Vec<String> = Vec::with_capacity(list_ident.size as usize);
+            let mut map_val_55: Vec<String> = Vec::with_capacity(list_ident.size as usize);
             for _ in 0..list_ident.size {
-              let list_elem_55 = i_prot.read_string()?;
-              map_val_54.push(list_elem_55);
+              let list_elem_56 = i_prot.read_string()?;
+              map_val_55.push(list_elem_56);
             }
             i_prot.read_list_end()?;
-            val.insert(map_key_53, map_val_54);
+            val.insert(map_key_54, map_val_55);
           }
           i_prot.read_map_end()?;
           f_4 = Some(val);
@@ -21219,6 +22566,539 @@ impl OmniSciGetResultRowForPixelResult {
           )
         )
       )
+    }
+  }
+}
+
+//
+// OmniSciCreateCustomExpressionArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct OmniSciCreateCustomExpressionArgs {
+  session: TSessionId,
+  custom_expression: TCustomExpression,
+}
+
+impl OmniSciCreateCustomExpressionArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<OmniSciCreateCustomExpressionArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<TSessionId> = None;
+    let mut f_2: Option<TCustomExpression> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_string()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = TCustomExpression::read_from_in_protocol(i_prot)?;
+          f_2 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("OmniSciCreateCustomExpressionArgs.session", &f_1)?;
+    verify_required_field_exists("OmniSciCreateCustomExpressionArgs.custom_expression", &f_2)?;
+    let ret = OmniSciCreateCustomExpressionArgs {
+      session: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      custom_expression: f_2.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("create_custom_expression_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("session", TType::String, 1))?;
+    o_prot.write_string(&self.session)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("custom_expression", TType::Struct, 2))?;
+    self.custom_expression.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// OmniSciCreateCustomExpressionResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct OmniSciCreateCustomExpressionResult {
+  result_value: Option<i32>,
+  e: Option<TOmniSciException>,
+}
+
+impl OmniSciCreateCustomExpressionResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<OmniSciCreateCustomExpressionResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<i32> = None;
+    let mut f_1: Option<TOmniSciException> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_i32()?;
+          f_0 = Some(val);
+        },
+        1 => {
+          let val = TOmniSciException::read_from_in_protocol(i_prot)?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = OmniSciCreateCustomExpressionResult {
+      result_value: f_0,
+      e: f_1,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("OmniSciCreateCustomExpressionResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::I32, 0))?;
+      o_prot.write_i32(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    if let Some(ref fld_var) = self.e {
+      o_prot.write_field_begin(&TFieldIdentifier::new("e", TType::Struct, 1))?;
+      fld_var.write_to_out_protocol(o_prot)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<i32> {
+    if self.e.is_some() {
+      Err(thrift::Error::User(Box::new(self.e.unwrap())))
+    } else if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for OmniSciCreateCustomExpression"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// OmniSciGetCustomExpressionsArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct OmniSciGetCustomExpressionsArgs {
+  session: TSessionId,
+}
+
+impl OmniSciGetCustomExpressionsArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<OmniSciGetCustomExpressionsArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<TSessionId> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_string()?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("OmniSciGetCustomExpressionsArgs.session", &f_1)?;
+    let ret = OmniSciGetCustomExpressionsArgs {
+      session: f_1.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("get_custom_expressions_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("session", TType::String, 1))?;
+    o_prot.write_string(&self.session)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// OmniSciGetCustomExpressionsResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct OmniSciGetCustomExpressionsResult {
+  result_value: Option<Vec<TCustomExpression>>,
+  e: Option<TOmniSciException>,
+}
+
+impl OmniSciGetCustomExpressionsResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<OmniSciGetCustomExpressionsResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<Vec<TCustomExpression>> = None;
+    let mut f_1: Option<TOmniSciException> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let list_ident = i_prot.read_list_begin()?;
+          let mut val: Vec<TCustomExpression> = Vec::with_capacity(list_ident.size as usize);
+          for _ in 0..list_ident.size {
+            let list_elem_57 = TCustomExpression::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_57);
+          }
+          i_prot.read_list_end()?;
+          f_0 = Some(val);
+        },
+        1 => {
+          let val = TOmniSciException::read_from_in_protocol(i_prot)?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = OmniSciGetCustomExpressionsResult {
+      result_value: f_0,
+      e: f_1,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("OmniSciGetCustomExpressionsResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::List, 0))?;
+      o_prot.write_list_begin(&TListIdentifier::new(TType::Struct, fld_var.len() as i32))?;
+      for e in fld_var {
+        e.write_to_out_protocol(o_prot)?;
+        o_prot.write_list_end()?;
+      }
+      o_prot.write_field_end()?
+    }
+    if let Some(ref fld_var) = self.e {
+      o_prot.write_field_begin(&TFieldIdentifier::new("e", TType::Struct, 1))?;
+      fld_var.write_to_out_protocol(o_prot)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<Vec<TCustomExpression>> {
+    if self.e.is_some() {
+      Err(thrift::Error::User(Box::new(self.e.unwrap())))
+    } else if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for OmniSciGetCustomExpressions"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// OmniSciUpdateCustomExpressionArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct OmniSciUpdateCustomExpressionArgs {
+  session: TSessionId,
+  id: i32,
+  expression_json: String,
+}
+
+impl OmniSciUpdateCustomExpressionArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<OmniSciUpdateCustomExpressionArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<TSessionId> = None;
+    let mut f_2: Option<i32> = None;
+    let mut f_3: Option<String> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_string()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_i32()?;
+          f_2 = Some(val);
+        },
+        3 => {
+          let val = i_prot.read_string()?;
+          f_3 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("OmniSciUpdateCustomExpressionArgs.session", &f_1)?;
+    verify_required_field_exists("OmniSciUpdateCustomExpressionArgs.id", &f_2)?;
+    verify_required_field_exists("OmniSciUpdateCustomExpressionArgs.expression_json", &f_3)?;
+    let ret = OmniSciUpdateCustomExpressionArgs {
+      session: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      id: f_2.expect("auto-generated code should have checked for presence of required fields"),
+      expression_json: f_3.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("update_custom_expression_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("session", TType::String, 1))?;
+    o_prot.write_string(&self.session)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("id", TType::I32, 2))?;
+    o_prot.write_i32(self.id)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("expression_json", TType::String, 3))?;
+    o_prot.write_string(&self.expression_json)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// OmniSciUpdateCustomExpressionResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct OmniSciUpdateCustomExpressionResult {
+  e: Option<TOmniSciException>,
+}
+
+impl OmniSciUpdateCustomExpressionResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<OmniSciUpdateCustomExpressionResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<TOmniSciException> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = TOmniSciException::read_from_in_protocol(i_prot)?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = OmniSciUpdateCustomExpressionResult {
+      e: f_1,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("OmniSciUpdateCustomExpressionResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(ref fld_var) = self.e {
+      o_prot.write_field_begin(&TFieldIdentifier::new("e", TType::Struct, 1))?;
+      fld_var.write_to_out_protocol(o_prot)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    if self.e.is_some() {
+      Err(thrift::Error::User(Box::new(self.e.unwrap())))
+    } else {
+      Ok(())
+    }
+  }
+}
+
+//
+// OmniSciDeleteCustomExpressionsArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct OmniSciDeleteCustomExpressionsArgs {
+  session: TSessionId,
+  custom_expression_ids: Vec<i32>,
+  do_soft_delete: bool,
+}
+
+impl OmniSciDeleteCustomExpressionsArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<OmniSciDeleteCustomExpressionsArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<TSessionId> = None;
+    let mut f_2: Option<Vec<i32>> = None;
+    let mut f_3: Option<bool> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_string()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let list_ident = i_prot.read_list_begin()?;
+          let mut val: Vec<i32> = Vec::with_capacity(list_ident.size as usize);
+          for _ in 0..list_ident.size {
+            let list_elem_58 = i_prot.read_i32()?;
+            val.push(list_elem_58);
+          }
+          i_prot.read_list_end()?;
+          f_2 = Some(val);
+        },
+        3 => {
+          let val = i_prot.read_bool()?;
+          f_3 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("OmniSciDeleteCustomExpressionsArgs.session", &f_1)?;
+    verify_required_field_exists("OmniSciDeleteCustomExpressionsArgs.custom_expression_ids", &f_2)?;
+    verify_required_field_exists("OmniSciDeleteCustomExpressionsArgs.do_soft_delete", &f_3)?;
+    let ret = OmniSciDeleteCustomExpressionsArgs {
+      session: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      custom_expression_ids: f_2.expect("auto-generated code should have checked for presence of required fields"),
+      do_soft_delete: f_3.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("delete_custom_expressions_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("session", TType::String, 1))?;
+    o_prot.write_string(&self.session)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("custom_expression_ids", TType::List, 2))?;
+    o_prot.write_list_begin(&TListIdentifier::new(TType::I32, self.custom_expression_ids.len() as i32))?;
+    for e in &self.custom_expression_ids {
+      o_prot.write_i32(*e)?;
+      o_prot.write_list_end()?;
+    }
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("do_soft_delete", TType::Bool, 3))?;
+    o_prot.write_bool(self.do_soft_delete)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// OmniSciDeleteCustomExpressionsResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct OmniSciDeleteCustomExpressionsResult {
+  e: Option<TOmniSciException>,
+}
+
+impl OmniSciDeleteCustomExpressionsResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<OmniSciDeleteCustomExpressionsResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<TOmniSciException> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = TOmniSciException::read_from_in_protocol(i_prot)?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = OmniSciDeleteCustomExpressionsResult {
+      e: f_1,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("OmniSciDeleteCustomExpressionsResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(ref fld_var) = self.e {
+      o_prot.write_field_begin(&TFieldIdentifier::new("e", TType::Struct, 1))?;
+      fld_var.write_to_out_protocol(o_prot)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    if self.e.is_some() {
+      Err(thrift::Error::User(Box::new(self.e.unwrap())))
+    } else {
+      Ok(())
     }
   }
 }
@@ -21433,8 +23313,8 @@ impl OmniSciGetDashboardsResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TDashboard> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_56 = TDashboard::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_56);
+            let list_elem_59 = TDashboard::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_59);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -21982,8 +23862,8 @@ impl OmniSciShareDashboardsArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<i32> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_57 = i_prot.read_i32()?;
-            val.push(list_elem_57);
+            let list_elem_60 = i_prot.read_i32()?;
+            val.push(list_elem_60);
           }
           i_prot.read_list_end()?;
           f_2 = Some(val);
@@ -21992,8 +23872,8 @@ impl OmniSciShareDashboardsArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_58 = i_prot.read_string()?;
-            val.push(list_elem_58);
+            let list_elem_61 = i_prot.read_string()?;
+            val.push(list_elem_61);
           }
           i_prot.read_list_end()?;
           f_3 = Some(val);
@@ -22135,8 +24015,8 @@ impl OmniSciDeleteDashboardsArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<i32> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_59 = i_prot.read_i32()?;
-            val.push(list_elem_59);
+            let list_elem_62 = i_prot.read_i32()?;
+            val.push(list_elem_62);
           }
           i_prot.read_list_end()?;
           f_2 = Some(val);
@@ -22272,8 +24152,8 @@ impl OmniSciShareDashboardArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_60 = i_prot.read_string()?;
-            val.push(list_elem_60);
+            let list_elem_63 = i_prot.read_string()?;
+            val.push(list_elem_63);
           }
           i_prot.read_list_end()?;
           f_3 = Some(val);
@@ -22282,8 +24162,8 @@ impl OmniSciShareDashboardArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_61 = i_prot.read_string()?;
-            val.push(list_elem_61);
+            let list_elem_64 = i_prot.read_string()?;
+            val.push(list_elem_64);
           }
           i_prot.read_list_end()?;
           f_4 = Some(val);
@@ -22449,8 +24329,8 @@ impl OmniSciUnshareDashboardArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_62 = i_prot.read_string()?;
-            val.push(list_elem_62);
+            let list_elem_65 = i_prot.read_string()?;
+            val.push(list_elem_65);
           }
           i_prot.read_list_end()?;
           f_3 = Some(val);
@@ -22459,8 +24339,8 @@ impl OmniSciUnshareDashboardArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_63 = i_prot.read_string()?;
-            val.push(list_elem_63);
+            let list_elem_66 = i_prot.read_string()?;
+            val.push(list_elem_66);
           }
           i_prot.read_list_end()?;
           f_4 = Some(val);
@@ -22611,8 +24491,8 @@ impl OmniSciUnshareDashboardsArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<i32> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_64 = i_prot.read_i32()?;
-            val.push(list_elem_64);
+            let list_elem_67 = i_prot.read_i32()?;
+            val.push(list_elem_67);
           }
           i_prot.read_list_end()?;
           f_2 = Some(val);
@@ -22621,8 +24501,8 @@ impl OmniSciUnshareDashboardsArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_65 = i_prot.read_string()?;
-            val.push(list_elem_65);
+            let list_elem_68 = i_prot.read_string()?;
+            val.push(list_elem_68);
           }
           i_prot.read_list_end()?;
           f_3 = Some(val);
@@ -22819,8 +24699,8 @@ impl OmniSciGetDashboardGranteesResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TDashboardGrantees> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_66 = TDashboardGrantees::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_66);
+            let list_elem_69 = TDashboardGrantees::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_69);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -23201,8 +25081,8 @@ impl OmniSciLoadTableBinaryArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TRow> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_67 = TRow::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_67);
+            let list_elem_70 = TRow::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_70);
           }
           i_prot.read_list_end()?;
           f_3 = Some(val);
@@ -23211,8 +25091,8 @@ impl OmniSciLoadTableBinaryArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_68 = i_prot.read_string()?;
-            val.push(list_elem_68);
+            let list_elem_71 = i_prot.read_string()?;
+            val.push(list_elem_71);
           }
           i_prot.read_list_end()?;
           f_4 = Some(val);
@@ -23358,8 +25238,8 @@ impl OmniSciLoadTableBinaryColumnarArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TColumn> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_69 = TColumn::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_69);
+            let list_elem_72 = TColumn::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_72);
           }
           i_prot.read_list_end()?;
           f_3 = Some(val);
@@ -23368,8 +25248,8 @@ impl OmniSciLoadTableBinaryColumnarArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_70 = i_prot.read_string()?;
-            val.push(list_elem_70);
+            let list_elem_73 = i_prot.read_string()?;
+            val.push(list_elem_73);
           }
           i_prot.read_list_end()?;
           f_4 = Some(val);
@@ -23517,8 +25397,8 @@ impl OmniSciLoadTableBinaryColumnarPolysArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TColumn> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_71 = TColumn::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_71);
+            let list_elem_74 = TColumn::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_74);
           }
           i_prot.read_list_end()?;
           f_3 = Some(val);
@@ -23527,8 +25407,8 @@ impl OmniSciLoadTableBinaryColumnarPolysArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_72 = i_prot.read_string()?;
-            val.push(list_elem_72);
+            let list_elem_75 = i_prot.read_string()?;
+            val.push(list_elem_75);
           }
           i_prot.read_list_end()?;
           f_4 = Some(val);
@@ -23820,8 +25700,8 @@ impl OmniSciLoadTableArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TStringRow> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_73 = TStringRow::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_73);
+            let list_elem_76 = TStringRow::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_76);
           }
           i_prot.read_list_end()?;
           f_3 = Some(val);
@@ -23830,8 +25710,8 @@ impl OmniSciLoadTableArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_74 = i_prot.read_string()?;
-            val.push(list_elem_74);
+            let list_elem_77 = i_prot.read_string()?;
+            val.push(list_elem_77);
           }
           i_prot.read_list_end()?;
           f_4 = Some(val);
@@ -24126,8 +26006,8 @@ impl OmniSciCreateTableArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TColumnType> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_75 = TColumnType::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_75);
+            let list_elem_78 = TColumnType::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_78);
           }
           i_prot.read_list_end()?;
           f_3 = Some(val);
@@ -24431,8 +26311,8 @@ impl OmniSciImportGeoTableArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TColumnType> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_76 = TColumnType::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_76);
+            let list_elem_79 = TColumnType::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_79);
           }
           i_prot.read_list_end()?;
           f_5 = Some(val);
@@ -24929,8 +26809,8 @@ impl OmniSciGetAllFilesInArchiveResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_77 = i_prot.read_string()?;
-            val.push(list_elem_77);
+            let list_elem_80 = i_prot.read_string()?;
+            val.push(list_elem_80);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -25086,8 +26966,8 @@ impl OmniSciGetLayersInGeoFileResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TGeoFileLayerInfo> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_78 = TGeoFileLayerInfo::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_78);
+            let list_elem_81 = TGeoFileLayerInfo::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_81);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -25473,8 +27353,8 @@ impl OmniSciStartQueryArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<i64> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_79 = i_prot.read_i64()?;
-            val.push(list_elem_79);
+            let list_elem_82 = i_prot.read_i64()?;
+            val.push(list_elem_82);
           }
           i_prot.read_list_end()?;
           f_6 = Some(val);
@@ -25792,8 +27672,8 @@ impl OmniSciBroadcastSerializedRowsArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TColumnType> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_80 = TColumnType::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_80);
+            let list_elem_83 = TColumnType::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_83);
           }
           i_prot.read_list_end()?;
           f_2 = Some(val);
@@ -26102,36 +27982,36 @@ impl OmniSciExecuteNextRenderStepArgs {
           let map_ident = i_prot.read_map_begin()?;
           let mut val: BTreeMap<String, BTreeMap<String, BTreeMap<String, BTreeMap<String, Vec<TRenderDatum>>>>> = BTreeMap::new();
           for _ in 0..map_ident.size {
-            let map_key_81 = i_prot.read_string()?;
+            let map_key_84 = i_prot.read_string()?;
             let map_ident = i_prot.read_map_begin()?;
-            let mut map_val_82: BTreeMap<String, BTreeMap<String, BTreeMap<String, Vec<TRenderDatum>>>> = BTreeMap::new();
+            let mut map_val_85: BTreeMap<String, BTreeMap<String, BTreeMap<String, Vec<TRenderDatum>>>> = BTreeMap::new();
             for _ in 0..map_ident.size {
-              let map_key_83 = i_prot.read_string()?;
+              let map_key_86 = i_prot.read_string()?;
               let map_ident = i_prot.read_map_begin()?;
-              let mut map_val_84: BTreeMap<String, BTreeMap<String, Vec<TRenderDatum>>> = BTreeMap::new();
+              let mut map_val_87: BTreeMap<String, BTreeMap<String, Vec<TRenderDatum>>> = BTreeMap::new();
               for _ in 0..map_ident.size {
-                let map_key_85 = i_prot.read_string()?;
+                let map_key_88 = i_prot.read_string()?;
                 let map_ident = i_prot.read_map_begin()?;
-                let mut map_val_86: BTreeMap<String, Vec<TRenderDatum>> = BTreeMap::new();
+                let mut map_val_89: BTreeMap<String, Vec<TRenderDatum>> = BTreeMap::new();
                 for _ in 0..map_ident.size {
-                  let map_key_87 = i_prot.read_string()?;
+                  let map_key_90 = i_prot.read_string()?;
                   let list_ident = i_prot.read_list_begin()?;
-                  let mut map_val_88: Vec<TRenderDatum> = Vec::with_capacity(list_ident.size as usize);
+                  let mut map_val_91: Vec<TRenderDatum> = Vec::with_capacity(list_ident.size as usize);
                   for _ in 0..list_ident.size {
-                    let list_elem_89 = TRenderDatum::read_from_in_protocol(i_prot)?;
-                    map_val_88.push(list_elem_89);
+                    let list_elem_92 = TRenderDatum::read_from_in_protocol(i_prot)?;
+                    map_val_91.push(list_elem_92);
                   }
                   i_prot.read_list_end()?;
-                  map_val_86.insert(map_key_87, map_val_88);
+                  map_val_89.insert(map_key_90, map_val_91);
                 }
                 i_prot.read_map_end()?;
-                map_val_84.insert(map_key_85, map_val_86);
+                map_val_87.insert(map_key_88, map_val_89);
               }
               i_prot.read_map_end()?;
-              map_val_82.insert(map_key_83, map_val_84);
+              map_val_85.insert(map_key_86, map_val_87);
             }
             i_prot.read_map_end()?;
-            val.insert(map_key_81, map_val_82);
+            val.insert(map_key_84, map_val_85);
           }
           i_prot.read_map_end()?;
           f_2 = Some(val);
@@ -26570,8 +28450,8 @@ impl OmniSciGetRolesResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_90 = i_prot.read_string()?;
-            val.push(list_elem_90);
+            let list_elem_93 = i_prot.read_string()?;
+            val.push(list_elem_93);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -26716,8 +28596,8 @@ impl OmniSciGetDbObjectsForGranteeResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TDBObject> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_91 = TDBObject::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_91);
+            let list_elem_94 = TDBObject::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_94);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -26873,8 +28753,8 @@ impl OmniSciGetDbObjectPrivsResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<TDBObject> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_92 = TDBObject::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_92);
+            let list_elem_95 = TDBObject::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_95);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -27019,8 +28899,8 @@ impl OmniSciGetAllRolesForUserResult {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_93 = i_prot.read_string()?;
-            val.push(list_elem_93);
+            let list_elem_96 = i_prot.read_string()?;
+            val.push(list_elem_96);
           }
           i_prot.read_list_end()?;
           f_0 = Some(val);
@@ -27753,9 +29633,9 @@ impl OmniSciGetDeviceParametersResult {
           let map_ident = i_prot.read_map_begin()?;
           let mut val: BTreeMap<String, String> = BTreeMap::new();
           for _ in 0..map_ident.size {
-            let map_key_94 = i_prot.read_string()?;
-            let map_val_95 = i_prot.read_string()?;
-            val.insert(map_key_94, map_val_95);
+            let map_key_97 = i_prot.read_string()?;
+            let map_val_98 = i_prot.read_string()?;
+            val.insert(map_key_97, map_val_98);
           }
           i_prot.read_map_end()?;
           f_0 = Some(val);
@@ -27850,8 +29730,8 @@ impl OmniSciRegisterRuntimeExtensionFunctionsArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<extension_functions::TUserDefinedFunction> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_96 = extension_functions::TUserDefinedFunction::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_96);
+            let list_elem_99 = extension_functions::TUserDefinedFunction::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_99);
           }
           i_prot.read_list_end()?;
           f_2 = Some(val);
@@ -27860,8 +29740,8 @@ impl OmniSciRegisterRuntimeExtensionFunctionsArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<extension_functions::TUserDefinedTableFunction> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_97 = extension_functions::TUserDefinedTableFunction::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_97);
+            let list_elem_100 = extension_functions::TUserDefinedTableFunction::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_100);
           }
           i_prot.read_list_end()?;
           f_3 = Some(val);
@@ -27870,9 +29750,9 @@ impl OmniSciRegisterRuntimeExtensionFunctionsArgs {
           let map_ident = i_prot.read_map_begin()?;
           let mut val: BTreeMap<String, String> = BTreeMap::new();
           for _ in 0..map_ident.size {
-            let map_key_98 = i_prot.read_string()?;
-            let map_val_99 = i_prot.read_string()?;
-            val.insert(map_key_98, map_val_99);
+            let map_key_101 = i_prot.read_string()?;
+            let map_val_102 = i_prot.read_string()?;
+            val.insert(map_key_101, map_val_102);
           }
           i_prot.read_map_end()?;
           f_4 = Some(val);

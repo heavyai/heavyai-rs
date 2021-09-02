@@ -38,16 +38,16 @@ enum TExtArgumentType {
   ColumnDouble,
   ColumnBool,
   TextEncodingNone,
-  TextEncodingDict8,
-  TextEncodingDict16,
-  TextEncodingDict32,
+  TextEncodingDict,
   ColumnListInt8,
   ColumnListInt16,
   ColumnListInt32,
   ColumnListInt64,
   ColumnListFloat,
   ColumnListDouble,
-  ColumnListBool
+  ColumnListBool,
+  ColumnTextEncodingDict,
+  ColumnListTextEncodingDict,
 }
 
 /* See QueryEngine/TableFunctions/TableFunctionsFactory.h for required values */
@@ -55,6 +55,7 @@ enum TOutputBufferSizeType {
   kConstant,
   kUserSpecifiedConstantParameter,
   kUserSpecifiedRowMultiplier,
+  kTableFunctionSpecifiedParameter
 }
 
 struct TUserDefinedFunction {
@@ -75,12 +76,24 @@ struct TUserDefinedTableFunction {
        inputArgTypes[sizerArgPos - 1] corresponds to sizer parameter
        inputArgTypes[-2] corresponds to input_row_count_ptr
        inputArgTypes[-1] corresponds to output_row_count_ptr
+
+      Annotations of UDTF input and output arguments is a mapping of annotation label and the
+      corresponding value. The length of the annotations list is len(sqlArgTypes) + len(outputArgTypes).
+
+      Supported annotation labels are:
+        * input_id: used for TextEncodingDict output column to set its
+          dict_id to the dict_id of TextEncodingDict input column as
+          specified by the input_id annotation value.
+        * name: specify the name of input or output arguments. This can be
+          used to define the names of output columns as well as to improve
+          the exception messages when binding fails.
    */
   1: string name,
   2: TOutputBufferSizeType sizerType,
   3: i32 sizerArgPos,
   4: list<TExtArgumentType> inputArgTypes,
   5: list<TExtArgumentType> outputArgTypes,
-  6: list<TExtArgumentType> sqlArgTypes
+  6: list<TExtArgumentType> sqlArgTypes,
+  7: list<map<string, string>> annotations
 }
 

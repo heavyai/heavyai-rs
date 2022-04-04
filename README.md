@@ -4,27 +4,30 @@
 
 [![Latest Version](https://img.shields.io/crates/v/omnisci.svg)](https://crates.io/crates/omnisci)
 
-A Rust client for connecting to [OmniSciDB](https://github.com/omnisci/omniscidb) via its RPC protocol of [Thrift](https://thrift.apache.org/). This package takes care of creating a client with the Thrift binary protocol and buffered transport, and exposes all of the OmniSci Thrift types and methods for use with it.
+A Rust client for connecting to [OmniSciDB](https://github.com/heavyai/heavydb)
+via its RPC protocol of [Thrift](https://thrift.apache.org/).
+This package takes care of creating a client with the Thrift binary protocol and buffered transport,
+and exposes all of the OmniSci Thrift types and methods for use with it.
 
 ## Requirements
 
 This client has been tested on these versions, and is expected to work with more recent versions unless otherwise noted:
 
 * Rust 1.41+
-* OmniSciDB 5.1+
+* HeavyDB 5.1+
 
-It is also likely to work on earlier versions of OmniSciDB, but this is not officially supported.
+It is also likely to work on earlier versions of HeavyDB, but this is not officially supported.
 
 ## How to use
 
-Add `omnisci` to your `Cargo.toml`:
+Add `heavyai` to your `Cargo.toml`:
 
 ```toml
 [dependencies]
 omnisci = "0.1.0"
 ```
 
-Then create a client and connect (to the 'Backend TCP' port on the OmniSciDB instance):
+Then create a client and connect (to the 'Backend TCP' port on the HeavyDB instance):
 
 ```rust
 use omnisci;
@@ -33,7 +36,7 @@ let mut client = omnisci::client::create("127.0.0.1:6274")?;
 
 let user = "admin".to_string();
 let passwd = "HyperInteractive".to_string();
-let database = "omnisci".to_string();
+let database = "db".to_string();
 
 let session = client.connect(user, passwd, database)?;
 
@@ -62,7 +65,7 @@ All source is also formatted with [rustfmt](https://github.com/rust-lang/rustfmt
 
 ### Testing
 
-The integration tests expect a local running instance of OmniSciDB on the default Backend TCP port: http://localhost:6274
+The integration tests expect a local running instance of HeavyDB on the default Backend TCP port: http://localhost:6274
 
 If running natively (such as with the `./startomnisci` script), that port is accessible by default. If running with Docker, expose the Backend TCP port in addition to the default Frontend Web port using `-p 6274:6274`.
 

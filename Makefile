@@ -1,8 +1,8 @@
 SHELL = /bin/sh
 .DEFAULT_GOAL=test
 
-OMNISCI_VERSION=v5.7.0
-DB_CONTAINER = omnisci-test-db
+HEAVYDB_VERSION=v5.7.0
+DB_CONTAINER = heavyai-test-db
 
 CURRENT_UID := $(shell id -u)
 
@@ -37,14 +37,15 @@ all: get_thrift thrift test release
 #
 
 thrift:
-	./generate_thrift_bindings.sh omniscidb
+	./generate_thrift_bindings.sh heavydb
 .PHONY: thrift
 
 %.thrift:
-	mkdir -p "omniscidb/QueryEngine"
-	curl "https://raw.githubusercontent.com/omnisci/omniscidb/rc/${OMNISCI_VERSION}/$@" -o "omniscidb/$@"
+	mkdir -p "heavydb/QueryEngine"
+	# curl "https://raw.githubusercontent.com/heavyai/heavydb/rc/${HEAVYDB_VERSION}/$@" -o "heavydb/$@"
+	cp "${HEAVYDB_DIR}/$@" "heavydb/$@"
 
-get_thrift: omnisci.thrift common.thrift completion_hints.thrift QueryEngine/serialized_result_set.thrift QueryEngine/extension_functions.thrift
+get_thrift: heavy.thrift common.thrift completion_hints.thrift QueryEngine/serialized_result_set.thrift QueryEngine/extension_functions.thrift
 .PHONY: get_thrift
 
 #
@@ -57,7 +58,7 @@ up:
 		-v ${PWD}:/src \
 		-v ${PWD}/target/${DB_CONTAINER}:/omnisci-storage \
 		-p 6273-6274:6273-6274 \
-		omnisci/core-os-cpu:${OMNISCI_VERSION}
+		heavyai/core-os-cpu:${HEAVYDB_VERSION}
 .PHONY: up
 
 down:
@@ -65,7 +66,7 @@ down:
 .PHONY: down
 
 docker_builder:
-	docker build -f docker/Dockerfile -t build-omnisci-rs .
+	docker build -f docker/Dockerfile -t build-heavyai-rs .
 .PHONY: docker_builder
 
 # This rule lets you run any other make target within the build container like `make all.docker`
@@ -76,5 +77,5 @@ docker_builder:
 	docker run -i --rm \
 		-v ${PWD}:/src \
 		-v ${HOME}/.cargo/registry:/home/user/.cargo/registry \
-		build-omnisci-rs \
+		build-heavyai-rs \
 		bash -l -c "make $*"

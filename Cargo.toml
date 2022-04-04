@@ -1,18 +1,18 @@
 [package]
-name = "omnisci"
-version = "0.2.0"
-authors = ["Jonathan Rajavuori <jrajav@gmail.com>"]
+name = "heavyai"
+version = "0.3.0"
+authors = ["Jonathan Rajavuori <jrajav@gmail.com>", "Mike Hinchey"]
 license = "MIT"
 edition = "2018"
-description = "A client for connecting to OmniSciDB using the Thrift API."
-keywords = ["omnisci", "mapd"]
+description = "A client for connecting to HeavyDB using the Thrift API."
+keywords = ["heavy.ai", "heavydb", "omnisci", "mapd"]
 categories = ["api-bindings", "database"]
-documentation = "https://docs.rs/omnisci/"
-repository = "https://github.com/jrajav/omnisci-rs"
+documentation = "https://docs.rs/heavyai/"
+repository = "https://github.com/heavyai/heavyai-rs"
 readme = "README.md"
 
 [dependencies]
-thrift = "0.13.0"
+thrift = "0.15.0"
 ordered-float = "1.0.2" # Required by thrift
 try_from = "0.3.2" # Required by thrift
 regex = "1"

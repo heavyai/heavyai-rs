@@ -2,3 +2,4 @@
 /examples/*/target
 **/*.rs.bk
 .env
+tmp

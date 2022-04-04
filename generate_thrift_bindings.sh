@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# Run Thrift on an OmniSci source folder, to generate the compiled Thrift bindings.
+# Run Thrift on an HeavyDB source folder, to generate the compiled Thrift bindings.
 # This script is intentionally brittle, so that it will get attention if anything changes.
 
 THRIFT_BINARY=thrift
-OMNISCI_PATH=$1
+HEAVYDB_PATH=$1
 
 # Check for a non-empty input folder
-if [ -z "$OMNISCI_PATH" ]; then
-  echo 'Expected a path to an OmniSciDB source folder - e.g. generate_thrift_bindings.sh ../omniscidb'
+if [ -z "$HEAVYDB_PATH" ]; then
+  echo 'Expected a path to an HeavyDB source folder - e.g. generate_thrift_bindings.sh ../heavydb'
   exit 1
 fi
 
@@ -19,45 +19,47 @@ if ! $THRIFT_BINARY --version | grep -q 'Thrift version 0.13.0'; then
     echo 'Using thrift version 0.14.1 instead'
   elif $THRIFT_BINARY --version | grep -q 'Thrift version 0.14.2'; then
     echo 'Using thrift version 0.14.2 instead'
+  elif $THRIFT_BINARY --version | grep -q 'Thrift version 0.15.0'; then
+    echo 'Using thrift version 0.15.0 instead'
   else
     exit 1
   fi
 fi
 
 # Check that the Thrift definitions exist in that folder
-if [ ! -f "$OMNISCI_PATH/omnisci.thrift" ]; then
-  echo "$OMNISCI_PATH not found"
+if [ ! -f "$HEAVYDB_PATH/heavy.thrift" ]; then
+  echo "$HEAVYDB_PATH not found"
   exit 1
 fi
 
 # Generate the bindings into our src folder
-if ! $THRIFT_BINARY -gen rs -recurse -out src "$OMNISCI_PATH/omnisci.thrift"; then
+if ! $THRIFT_BINARY -gen rs -recurse -out src "$HEAVYDB_PATH/heavy.thrift"; then
   echo 'Failed to generate Thrift bindings'
   exit 1
 fi
 
-# Fix the clippy lines to get rid of the only warnings in the bindings - just an annoyance
-fix_clippy () {
-  if ! grep -q '#!\[cfg_attr(feature = "cargo-clippy", allow(too_many_arguments, type_complexity))\]' $1; then
-    echo "Clippy line not found in $1"
-  else
-    if ! perl -0777 -i -pe 's/#!\[cfg_attr\(feature = "cargo-clippy", allow\(too_many_arguments, type_complexity\)\)\]/#![cfg_attr(feature = "cargo-clippy", allow(clippy::too_many_arguments, clippy::type_complexity))]/g' $1; then
-      echo "Failed to fix clippy line in $1"
-      exit 1
-    fi
-  fi
-}
+# # Fix the clippy lines to get rid of the only warnings in the bindings - just an annoyance
+# fix_clippy () {
+#   if ! grep -q '#!\[cfg_attr(feature = "cargo-clippy", allow(too_many_arguments, type_complexity))\]' $1; then
+#     echo "Clippy line not found in $1"
+#   else
+#     if ! perl -0777 -i -pe 's/#!\[cfg_attr\(feature = "cargo-clippy", allow\(too_many_arguments, type_complexity\)\)\]/#![cfg_attr(feature = "cargo-clippy", allow(clippy::too_many_arguments, clippy::type_complexity))]/g' $1; then
+#       echo "Failed to fix clippy line in $1"
+#       exit 1
+#     fi
+#   fi
+# }
 
-fix_clippy "src/common.rs"
-fix_clippy "src/completion_hints.rs"
-fix_clippy "src/extension_functions.rs"
-fix_clippy "src/omnisci.rs"
-fix_clippy "src/serialized_result_set.rs"
+# fix_clippy "src/common.rs"
+# fix_clippy "src/completion_hints.rs"
+# fix_clippy "src/extension_functions.rs"
+# fix_clippy "src/heavy.rs"
+# fix_clippy "src/serialized_result_set.rs"
 
-# Fix the use declarations in omnisci.rs to have crate:: in front so that they can compile.
+# Fix the use declarations in heavy.rs to have crate:: in front so that they can compile.
 # This is patching over open issue https://issues.apache.org/jira/browse/THRIFT-5071
-if ! perl -0777 -pi -e 's/use common;\nuse completion_hints;\nuse extension_functions;\nuse serialized_result_set;/use crate::common;\nuse crate::completion_hints;\nuse crate::extension_functions;\nuse crate::serialized_result_set;/gs' src/omnisci.rs; then
-  echo "Failed to fix use declarations in omnisci.rs"
+if ! perl -0777 -pi -e 's/use common;\nuse completion_hints;\nuse extension_functions;\nuse serialized_result_set;/use crate::common;\nuse crate::completion_hints;\nuse crate::extension_functions;\nuse crate::serialized_result_set;/gs' src/heavy.rs; then
+  echo "Failed to fix use declarations in heavy.rs"
   exit 1
 fi
 
@@ -67,13 +69,13 @@ if ! perl -0777 -pi -e 's/use common;/use crate::common;/g' src/serialized_resul
   exit 1
 fi
 
-# # Add the commit hash from OmniSciDB for tracking
-# if ! sed -i "1i\/\/ Generated from OmniSciDB commit $(cd $OMNISCI_PATH; git log -n 1 --pretty=format:"%H")" src/common.rs src/completion_hints.rs src/extension_functions.rs src/omnisci.rs src/serialized_result_set.rs; then
+# # Add the commit hash from HeavyDB for tracking
+# if ! sed -i "1i\/\/ Generated from HeavyDB commit $(cd $HEAVYDB_PATH; git log -n 1 --pretty=format:"%H")" src/common.rs src/completion_hints.rs src/extension_functions.rs src/heavy.rs src/serialized_result_set.rs; then
 #   echo "Failed to add commit hash comments"
 #   exit 1
 # fi
 
-if ! perl -pi -e 'chomp if eof' src/common.rs src/completion_hints.rs src/extension_functions.rs src/omnisci.rs src/serialized_result_set.rs; then
+if ! perl -pi -e 'chomp if eof' src/common.rs src/completion_hints.rs src/extension_functions.rs src/heavy.rs src/serialized_result_set.rs; then
   echo "Failed to chomp newlines"
   exit 1
 fi

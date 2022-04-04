@@ -1,5 +1,5 @@
-namespace java com.omnisci.thrift.calciteserver
-namespace py omnisci.extension_functions
+namespace java ai.heavy.thrift.calciteserver
+namespace py heavy.extension_functions
 
 /* See QueryEngine/ExtensionFunctionsWhitelist.h for required values */
 enum TExtArgumentType {
@@ -48,6 +48,8 @@ enum TExtArgumentType {
   ColumnListBool,
   ColumnTextEncodingDict,
   ColumnListTextEncodingDict,
+  ColumnTimestamp,
+  Timestamp,
 }
 
 /* See QueryEngine/TableFunctions/TableFunctionsFactory.h for required values */
@@ -55,7 +57,8 @@ enum TOutputBufferSizeType {
   kConstant,
   kUserSpecifiedConstantParameter,
   kUserSpecifiedRowMultiplier,
-  kTableFunctionSpecifiedParameter
+  kTableFunctionSpecifiedParameter,
+  kPreFlightParameter,
 }
 
 struct TUserDefinedFunction {

@@ -8,7 +8,7 @@ description = "A client for connecting to HeavyDB using the Thrift API."
 keywords = ["heavy.ai", "heavydb", "omnisci", "mapd"]
 categories = ["api-bindings", "database"]
 documentation = "https://docs.rs/heavyai/"
-repository = "https://github.com/heavyat/heavyai-rs"
+repository = "https://github.com/heavyai/heavyai-rs"
 readme = "README.md"
 
 [dependencies]

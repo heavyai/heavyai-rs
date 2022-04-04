@@ -1,16 +1,21 @@
 // This integration test expects OmniSciDB running with Backend TCP port running here:
-const OMNISCI_ADDRESS: &str = "127.0.0.1:6274";
-const OMNISCI_USER: &str = "admin";
-const OMNISCI_PASSWD: &str = "HyperInteractive";
-const OMNISCI_DBNAME: &str = "omnisci";
+const DB_ADDRESS: &str = "127.0.0.1:6274";
+const DB_USER: &str = "admin";
+const DB_PASSWD: &str = "HyperInteractive";
+const DB_DBNAME: &str = "db";
 
 use chrono;
-use omnisci::omnisci::TOmniSciSyncClient;
+
+// use heavyai;
+// use heavyai::heavy;
+// use crate::heavy;
+// use heavyai::heavy::THeavySyncClient;
 
 #[test]
 fn test_version() -> Result<(), thrift::Error> {
-  let mut client = omnisci::client::create(OMNISCI_ADDRESS)?;
+  let mut client = heavyai::client::create(DB_ADDRESS)?;
   let version = client.get_version()?;
+
 
   assert!(!version.is_empty());
 
@@ -24,12 +29,12 @@ fn test_insert_and_query() -> Result<(), thrift::Error> {
     chrono::Utc::now().format("%Y%m%d_%H%M%S")
   );
 
-  let mut client = omnisci::client::create(OMNISCI_ADDRESS)?;
+  let mut client = heavyai::client::create(DB_ADDRESS)?;
 
   let session = client.connect(
-    OMNISCI_USER.to_string(),
-    OMNISCI_PASSWD.to_string(),
-    OMNISCI_DBNAME.to_string(),
+    DB_USER.to_string(),
+    DB_PASSWD.to_string(),
+    DB_DBNAME.to_string(),
   )?;
 
   let mut run_query = |query| {

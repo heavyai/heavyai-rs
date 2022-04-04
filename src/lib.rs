@@ -6,12 +6,12 @@ pub mod common;
 pub mod completion_hints;
 pub mod extension_functions;
 #[allow(deprecated)] // lots of deprecated warnings from the thrift-generated code
-pub mod omnisci;
+pub mod heavy;
 pub mod serialized_result_set;
 
 pub mod client {
-  use crate::omnisci;
-  use crate::omnisci::{OmniSciSyncClient, TColumn, TOmniSciSyncClient, TQueryResult, TSessionId, TColumnData};
+  use crate::heavy;
+  use crate::heavy::{HeavySyncClient, TColumn, THeavySyncClient, TQueryResult, TSessionId, TColumnData};
   use regex;
   use thrift::OrderedFloat;
 
@@ -23,7 +23,7 @@ pub mod client {
   pub fn create(
     remote_address: &str,
   ) -> Result<
-    OmniSciSyncClient<
+    HeavySyncClient<
       TBinaryInputProtocol<TBufferedReadTransport<ReadHalf<TTcpChannel>>>,
       TBinaryOutputProtocol<TBufferedWriteTransport<WriteHalf<TTcpChannel>>>,
     >,
@@ -37,7 +37,7 @@ pub mod client {
     let i_prot = TBinaryInputProtocol::new(TBufferedReadTransport::new(i_chan), true);
     let o_prot = TBinaryOutputProtocol::new(TBufferedWriteTransport::new(o_chan), true);
 
-    Ok(OmniSciSyncClient::new(i_prot, o_prot))
+    Ok(HeavySyncClient::new(i_prot, o_prot))
   }
 
   impl From<Vec<i64>> for TColumn {
@@ -122,7 +122,7 @@ pub mod client {
     }
   }
 
-  pub trait OmniSciConnection {
+  pub trait HeavyDBConnection {
     // TODO consider weld.rs as a DataFrame API https://github.com/weld-project/weld/tree/master/weld
     // TODO consider postres Row for request/response API https://docs.rs/postgres/0.17.5/postgres/row/struct.Row.html
 
@@ -131,7 +131,7 @@ pub mod client {
     // TODO nonce for sql_execute
     fn sql_execute(&mut self, query: String, column_format: bool, nonce: String) -> thrift::Result<TQueryResult>;
 
-    fn render_vega(&mut self, widget_id: i64, vega_json: String, compression_level: i32, nonce: String) -> thrift::Result<omnisci::TRenderResult>;
+    fn render_vega(&mut self, widget_id: i64, vega_json: String, compression_level: i32, nonce: String) -> thrift::Result<heavy::TRenderResult>;
 
     fn load_table_binary_columnar(
       &mut self,
@@ -144,12 +144,12 @@ pub mod client {
   // TODO support other i/o protocols? <IP, OP> where IP: TInputProtocol, OP: TOutputProtocol
   pub struct OmniSciBinarySyncClient {
     session: TSessionId,
-    client: OmniSciSyncClient<
+    client: HeavySyncClient<
       TBinaryInputProtocol<TBufferedReadTransport<ReadHalf<TTcpChannel>>>,
       TBinaryOutputProtocol<TBufferedWriteTransport<WriteHalf<TTcpChannel>>>,
     >,
   }
-  impl OmniSciConnection for OmniSciBinarySyncClient {
+  impl HeavyDBConnection for OmniSciBinarySyncClient {
     fn disconnect(&mut self) -> thrift::Result<()> {
       self.client.disconnect(self.session.to_string())
     }
@@ -166,7 +166,7 @@ pub mod client {
     }
 
     fn render_vega(&mut self, widget_id: i64, vega_json: String, compression_level: i32, nonce: String)
-      -> thrift::Result<omnisci::TRenderResult> {
+      -> thrift::Result<heavy::TRenderResult> {
         self.client.render_vega(self.session.to_string(), widget_id, vega_json, compression_level, nonce)
     }
 
@@ -187,7 +187,7 @@ pub mod client {
     user: &str,
     password: &str,
     db_name: &str,
-  ) -> thrift::Result<Box<dyn OmniSciConnection>> {
+  ) -> thrift::Result<Box<dyn HeavyDBConnection>> {
     let mut c = TTcpChannel::new();
     c.open(remote_address)?;
 
@@ -196,7 +196,7 @@ pub mod client {
     let i_prot = TBinaryInputProtocol::new(TBufferedReadTransport::new(i_chan), true);
     let o_prot = TBinaryOutputProtocol::new(TBufferedWriteTransport::new(o_chan), true);
 
-    let mut client = OmniSciSyncClient::new(i_prot, o_prot);
+    let mut client = HeavySyncClient::new(i_prot, o_prot);
     let session = client.connect(
       String::from(user),
       String::from(password),
@@ -206,8 +206,8 @@ pub mod client {
     Ok(Box::new(OmniSciBinarySyncClient { session, client }))
   }
 
-  // Example: "omnisci://admin:HyperInteractive@omnisciserver:6274/omnisci"
-  pub fn connect_url(url: &str) -> thrift::Result<Box<dyn OmniSciConnection>> {
+  // Example: "heavyai://admin:HyperInteractive@heavydb:6274/db"
+  pub fn connect_url(url: &str) -> thrift::Result<Box<dyn HeavyDBConnection>> {
     // TODO allow optional values in url
     let re = regex::Regex::new(
       r"omnisci://(?P<user>.*):(?P<password>.*)@(?P<host_port>.*)/(?P<database>.*)",

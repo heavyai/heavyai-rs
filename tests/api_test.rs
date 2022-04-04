@@ -2,8 +2,8 @@
 const OMNISCI_DB_URL: &str = "omnisci://admin:HyperInteractive@localhost:6274/omnisci";
 
 use chrono;
-use omnisci;
-use omnisci::omnisci::{TColumn};
+use heavyai;
+use heavyai::heavy::{TColumn};
 
 #[test]
 fn test_insert_and_query() -> Result<(), thrift::Error> {
@@ -12,7 +12,7 @@ fn test_insert_and_query() -> Result<(), thrift::Error> {
     chrono::Utc::now().format("%Y%m%d_%H%M%S")
   );
 
-  let mut con = omnisci::client::connect_url(OMNISCI_DB_URL)?;
+  let mut con = heavyai::client::connect_url(OMNISCI_DB_URL)?;
 
   con.sql_execute(format!(
     "CREATE TABLE {} (date_ text, trans text, symbol text, qty int, price float, vol float);",

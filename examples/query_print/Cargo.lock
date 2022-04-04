@@ -180,22 +180,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "omnisci"
-version = "0.1.0"
-dependencies = [
- "ordered-float",
- "thrift",
- "try_from",
-]
-
-[[package]]
-name = "omnisci_example_query_print"
-version = "0.1.0"
-dependencies = [
- "omnisci",
-]
-
-[[package]]
 name = "ordered-float"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
